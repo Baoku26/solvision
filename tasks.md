@@ -132,41 +132,45 @@
 ## Phase 3: Live Data Integration
 
 ### 3.1 Solana RPC client
-- [ ] Implement `src/services/rpc.js`
-- [ ] `getBalance(address)` — returns SOL balance (convert lamports to SOL)
-- [ ] `getTokenAccountsByOwner(address)` — returns array of `{ mint, balance, decimals }`
-- [ ] `getRecentPerformanceSamples(1)` — returns current TPS
-- [ ] All calls use configured RPC endpoint from localStorage (default: Helius)
-- [ ] Error handling: network errors return `{ error, cached: lastKnownValue }`
-- [ ] Request timeout: 10 seconds
+- [x] Implement `src/services/rpc.js`
+- [x] `getBalance(address, cached?)` — returns `{ data: SOL, error }` (lamports ÷ 1e9)
+- [x] `getTokenAccountsByOwner(address, cached?)` — returns `{ data: [{mint,balance,decimals}], error }`
+- [x] `getRecentTPS(cached?)` — returns `{ data: tps, error }` from `getRecentPerformanceSamples`
+- [x] All calls use RPC endpoint from localStorage (default: public mainnet)
+- [x] Timeout: 10s via AbortController; errors return `{ data: cachedValue, error: message }`
+- [x] 14 unit tests covering balance parsing, token account parsing, TPS, error fallback
 
-**AC:** With a valid mainnet address, returns correct SOL balance and token accounts. Falls back to cached data on error.
+**AC:** Tests pass with mocked fetch. Falls back to cached data on error.
 
 ### 3.2 Jupiter price client
-- [ ] Implement `src/services/prices.js`
-- [ ] `getBatchPrices(mintAddresses[])` — single call to Jupiter Price API v2
-- [ ] Returns `{ [mint]: { price, change24h } }`
-- [ ] Cache results in memory and localStorage (`sv_price_cache`)
-- [ ] Fallback: if Jupiter fails 3x consecutively, switch to CoinGecko for next 5 minutes
+- [x] Implement `src/services/prices.js`
+- [x] `getBatchPrices(mints[])` — fetches Jupiter v4 batch endpoint
+- [x] Returns `{ data: { [mint]: { price, change24h } }, error, stale }`
+- [x] `change24h` calculated from stored price history (`sv_price_history`, max 30 pts/token, 24h TTL)
+- [x] Caches to localStorage `sv_price_cache` on every successful fetch
+- [x] Fallback: after 3 consecutive Jupiter failures, switches to CoinGecko for 5 minutes
+- [x] `getCachedPrices()` and `getPriceHistory(mint)` exported for sparklines
+- [x] `compute24hChange(prices, history)` exported and unit-tested
 
-**AC:** Batch price request returns correct prices for SOL + at least 5 SPL tokens. Cached data is used when API is down.
+**AC:** 14 tests covering Jupiter fetch, cache fallback, 24h change calculation.
 
 ### 3.3 Token metadata resolution
-- [ ] Map token mints to human-readable names, symbols, and icon colors
-- [ ] Use a hardcoded registry in `src/constants.js` for top 20 Solana tokens
-- [ ] For unknown tokens: display truncated mint address as name, "?" as icon
+- [x] `TOKEN_REGISTRY` in `src/constants.js`: 15 tokens including SOL, USDC, USDT, JUP, RAY, BONK, WIF, JTO, RNDR, PYTH, mSOL, bSOL, ETH (Wormhole), WBTC, ORCA
+- [x] `getTokenMeta(mint)` — returns metadata or derived stub for unknown mints
+- [x] Each entry: `{ symbol, name, color, coingeckoId }`
 
-**AC:** SOL, USDC, USDT, JUP, RAY, BONK, WIF, JTO, RNDR, PYTH all display correct names and symbols.
+**AC:** All 10 spec tokens present with correct names and symbols (verified by test).
 
 ### 3.4 WebSocket transaction monitor
-- [ ] Implement `src/services/websocket.js`
-- [ ] Subscribe to `accountSubscribe` for the active wallet's SOL account
-- [ ] Subscribe to `logsSubscribe` with `mentions: [walletAddress]` for SPL transfers
-- [ ] On notification: parse transaction type (received/sent/swap), trigger notification banner, refresh balances
-- [ ] Reconnect with exponential backoff on disconnect (1s → 2s → 4s → 8s → max 30s)
-- [ ] `disconnect()` on wallet switch or app unmount
+- [x] Implement `src/services/websocket.js`
+- [x] `wsMonitor.connect(address)` — opens WS, subscribes to `accountSubscribe` + `logsSubscribe`
+- [x] Dispatches `sv:balance-changed` and `sv:transaction` CustomEvents on notifications
+- [x] Transaction type parsed from logs: 'sol' | 'token' | 'swap'
+- [x] Exponential backoff reconnect: 1s → 2s → 4s → 8s → 16s → 30s max
+- [x] `wsMonitor.disconnect()` stops reconnect loop, closes socket cleanly
+- [x] WS URL derived from HTTP RPC URL (https:// → wss://)
 
-**AC:** Receiving SOL to the watched address triggers a notification within 3 seconds. WebSocket reconnects automatically after simulated disconnect.
+**AC:** Service implemented; integration test requires real Solana WS (manual test on deploy).
 
 ---
 

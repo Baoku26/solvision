@@ -187,11 +187,91 @@ The `char-selector.js` component is reused for pairing code entry (alphanumeric,
 - `public/src/components/status-bar.js` — nav hint glyphs (↑↓ ↵ Esc), TPS display
 - `updateTPS(value)` exported; formats with `toLocaleString`
 
+### Session Summary (2026-05-24 continued)
+
+**Phase 2: Wallet Import is done (tasks 2.1 – 2.5).**
+
+#### 2.1 — Pairing API (Vercel Edge Functions)
+- `api/pair/index.js` — POST: validates Base58, generates 6-char code (`ALPHANUMERIC` charset), stores in KV with 600s TTL; rate-limited to 5 POSTs/IP/min via KV counter
+- `api/pair/[code].js` — GET: single-use retrieval (deletes after fetch), 404 on miss; DELETE: manual cleanup
+- `api/health.js` — `{ ok: true, timestamp }` health check
+
+#### 2.2 — Companion setup page
+- `public/setup.html` — standalone mobile page; client-side Base58 validation, POST /api/pair, 10-min countdown, system fonts (not JetBrains Mono)
+
+#### 2.3 — Char selector component
+- `public/src/components/char-selector.js` — `createCharSelector(container, { charset, slots, onComplete })`
+- Sliding window of 8 visible slots for > 8-slot selectors (e.g. 44-slot Base58 address entry)
+- All arrow keys call `e.stopPropagation()` to prevent global D-pad handler from firing
+- 18 unit tests in `tests/char-selector.test.js`
+
+#### 2.4 — Import wallet view
+- `public/src/views/import-wallet.js` — three import modes: pairing code (6-slot alphanumeric → GET /api/pair/:code), manual (44-slot Base58 char selector), deeplink (`?addr=` URL param consumed on boot)
+- Inline error + loading states; `register()` exported for `app.js`
+
+#### 2.5 — Manage wallets view
+- `public/src/views/manage-wallets.js` — list with active badge, submenu overlay (Set Active / Remove / Cancel), confirmation overlay; last wallet removed → redirect to import; max 5 wallets enforced
+
+---
+
+**Phase 3: Live Data Integration is done (tasks 3.1 – 3.4).**
+
+#### 3.1 — Solana RPC client
+- `public/src/services/rpc.js` — `getBalance`, `getTokenAccountsByOwner`, `getRecentTPS`; all return `{ data, error }`, never throw; 10s AbortController timeout; falls back to cached value on error
+- 14 unit tests
+
+#### 3.2 — Jupiter price client
+- `public/src/services/prices.js` — `getBatchPrices(mints[])` → `{ data, error, stale }`
+- After 3 consecutive Jupiter failures, switches to CoinGecko for 5 minutes
+- 24h change computed from `sv_price_history` (max 30 pts/token, 24h TTL); no module-level in-memory cache — localStorage is single source of truth
+- `getCachedPrices()`, `getPriceHistory(mint)`, `compute24hChange()` exported
+- 14 unit tests
+
+#### 3.3 — Token metadata
+- `TOKEN_REGISTRY` in `constants.js` — 15 tokens: SOL, USDC, USDT, JUP, RAY, BONK, WIF, JTO, PYTH, RNDR, mSOL, bSOL, ETH (Wormhole), WBTC, ORCA
+- `getTokenMeta(mint)` — returns registry entry or derived fallback stub
+
+#### 3.4 — WebSocket monitor
+- `public/src/services/websocket.js` — `wsMonitor.connect(address)` / `wsMonitor.disconnect()`
+- Subscribes to `accountSubscribe` + `logsSubscribe`; dispatches `sv:balance-changed` and `sv:transaction` CustomEvents on `document`
+- Transaction type parsed from logs: `'sol' | 'token' | 'swap'`
+- Exponential backoff reconnect: 1s → 2s → 4s → 8s → 16s → 30s max
+
+---
+
+**Phase 4: Dashboard & Detail Views is done (tasks 4.1 – 4.5). 109 tests passing.**
+
+#### 4.1 — Dashboard view
+- `public/src/views/dashboard.js` — portfolio summary (total USD, weighted 24h change, SOL balance); virtual 6-item token list; settings button
+- Pollers: prices at configurable interval (default 10s), balances every 30s, TPS every 15s — all pause via `createPoller`'s `visibilitychange` handler
+- Custom `keydown` handler on the view container intercepts ArrowUp/Down on token items, manages scroll window, calls `e.stopPropagation()` before global handler
+- WS connected once per wallet address (`_wsAddress` guard prevents redundant reconnects)
+- `sv:prices-updated` CustomEvent dispatched after each successful price fetch (consumed by detail view)
+
+#### 4.2 — Token item component
+- `public/src/components/token-item.js` — `createTokenItem(data)` / `updateTokenItem(el, data)`
+- In-place DOM update via `innerHTML` re-fill — no node recreation, no flicker
+- Layout: colored circle icon | symbol + name / price + change | USD value + holdings
+
+#### 4.3 — Token detail view
+- `public/src/views/detail.js` — large price (text-3xl) + 24h change, sparkline, 2×2 stats grid (24h high, 24h low, holdings, USD value)
+- Back button → `navigateBack()`; dashboard restores focus to `_focusedIdx` on re-mount
+- Listens for `sv:prices-updated` while mounted; cleans up listener in `unmount`
+
+#### 4.4 — Sparkline component
+- `public/src/components/sparkline.js` — `createSparkline(container, opts)` → `{ update(points), destroy() }`
+- 2× DPR canvas (`canvas.width = cssW * 2`); coordinates scaled by 2 for the CSS dot position
+- Gradient fill (line color → transparent); pulsing `.sparkline-dot` CSS div overlay animated with `@keyframes dot-pulse`
+- RAF-gated redraws; green (`#00FFA3`) if last ≥ first, red (`#FF4757`) otherwise
+
+#### 4.5 — Notification component
+- `public/src/components/notification.js` — `pushNotification(type, text)` / `initNotifications()`
+- FIFO queue; only one `.notif-banner` visible at a time; slides in from top of `#app-main` via CSS transform transition; auto-dismisses after 4s
+- `#app-notifications` is `position:absolute; z-index:100; pointer-events:none` — never steals focus
+
 ### Up Next
 
-Phase 2: Wallet Import (tasks 2.1 – 2.5)
-- Pairing API (Vercel Edge Functions + KV)
-- Companion setup page (`public/setup.html`)
-- Character selector component (arrow-key character input, 6 or 44 slots)
-- Import wallet view (pairing code, deeplink, manual address)
-- Manage wallets view (list, switch, remove)
+Phase 5: Settings & Configuration (tasks 5.1 – 5.2)
+- Settings view: all 8 menu items navigable by arrow keys, changes persist to localStorage
+- Network/RPC changes trigger WS reconnection and full data re-fetch
+- (Optional) Price alerts: per-token threshold alerts, single-use, fire via notification system

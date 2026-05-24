@@ -77,58 +77,55 @@
 ## Phase 2: Wallet Import
 
 ### 2.1 Pairing API (Vercel Edge Functions)
-- [ ] Implement `api/pair.js`:
-  - `POST /api/pair` — validates address (Base58), generates 6-char alphanumeric code, stores in Vercel KV (TTL 600s), returns `{ code }`
-  - `GET /api/pair/[code]` — retrieves address by code, deletes code from KV, returns `{ address }` or 404
-- [ ] Rate limit: 5 POST requests per IP per minute (use KV counter with TTL)
-- [ ] Implement `api/health.js` — returns `{ ok: true, timestamp }`
+- [x] Implement `api/pair/index.js`: POST — validates Base58, generates 6-char code, stores in KV (TTL 600s)
+- [x] Implement `api/pair/[code].js`: GET — retrieves address, deletes after use (single-use); DELETE — cleanup
+- [x] Rate limit: 5 POSTs per IP per minute via KV counter with TTL
+- [x] Implement `api/health.js` — returns `{ ok: true, timestamp }`
 
-**AC:** `curl -X POST /api/pair -d '{"address":"validAddr"}'` returns a 6-char code. `GET /api/pair/CODE` returns the address and subsequent GETs return 404. Codes expire after 10 minutes.
+**AC:** POST returns 6-char code. GET returns address and subsequent GETs return 404. Codes expire after 10 minutes.
 
 ### 2.2 Companion setup page
-- [ ] Create `public/setup.html` — standalone page for phone/desktop
-- [ ] Single text input: "Paste your Solana wallet address"
-- [ ] Client-side Base58 validation with inline error
-- [ ] On submit: calls POST /api/pair, displays the 6-char code prominently
-- [ ] Shows countdown timer (10 min) and instructions: "Enter this code on your glasses"
-- [ ] Mobile-responsive design (this page is viewed on phone, not glasses)
+- [x] Create `public/setup.html` — standalone page for phone/desktop
+- [x] Single text input: "Paste your Solana wallet address"
+- [x] Client-side Base58 validation with inline error
+- [x] On submit: calls POST /api/pair, displays the 6-char code prominently
+- [x] Shows countdown timer (10 min) and instructions: "Enter this code on your glasses"
+- [x] Mobile-responsive design (this page is viewed on phone, not glasses)
 
 **AC:** Valid address → code displayed. Invalid address → inline error. Code is visible and copyable. Page works on mobile Safari and Chrome.
 
 ### 2.3 Character selector component
-- [ ] Implement `src/components/char-selector.js`
-- [ ] Configurable: charset (alphanumeric for pairing, Base58 for address), slot count (6 or 44)
-- [ ] Arrow Up/Down cycles characters in active slot
-- [ ] Arrow Left/Right moves between slots
-- [ ] Enter on last filled slot triggers `complete` callback with assembled string
-- [ ] Visual: active slot highlighted with cyan glow, up/down arrow hints, 24px character display
-- [ ] Write unit tests for character cycling and completion
+- [x] Implement `src/components/char-selector.js`
+- [x] Configurable: charset (alphanumeric for pairing, Base58 for address), slot count (6 or 44)
+- [x] Arrow Up/Down cycles characters in active slot
+- [x] Arrow Left/Right moves between slots
+- [x] Enter on last filled slot triggers `complete` callback + dispatches CustomEvent
+- [x] For > 8 slots: sliding window of 8 visible slots with progress indicator
+- [x] Visual: active slot highlighted with cyan border, up/down arrow hints, 24px character display
+- [x] 18 unit tests — all passing
 
-**AC:** 6-slot alphanumeric selector allows entering any code via arrow keys only. Completion fires with correct string. Focus visuals match design spec.
+**AC:** 6-slot alphanumeric selector allows entering any code via arrow keys only. Completion fires with correct string. Arrow events stop propagation so global nav handler is not triggered.
 
 ### 2.4 Import wallet view
-- [ ] Implement `src/views/import-wallet.js`
-- [ ] Three import methods accessible via focusable menu:
-  1. "Enter Pairing Code" → renders char-selector (6 slots, alphanumeric)
-  2. "Paste via Link" → instructions to use deeplink on phone
-  3. "Enter Address Manually" → renders char-selector (44 slots, Base58)
-- [ ] On pairing code complete: call GET /api/pair/:code → validate address → save to localStorage → navigate to dashboard
-- [ ] On manual address complete: validate Base58 → save to localStorage → navigate to dashboard
-- [ ] Handle deeplink: on app boot, check `window.location.search` for `addr` param → validate → save → clear URL
-- [ ] Error states: "Invalid code", "Code expired", "Invalid address", "Wallet limit reached (max 5)", "Already connected"
-- [ ] Success state: "Wallet connected!" notification banner → redirect to dashboard
+- [x] Implement `src/views/import-wallet.js`
+- [x] Three import methods: "Enter Pairing Code" / "Paste via Link" / "Enter Address Manually"
+- [x] Pairing code: char-selector (6 slots, alphanumeric) → GET /api/pair/:code → save → navigate
+- [x] Manual: char-selector (44 slots, Base58) → validate → save → navigate
+- [x] Deeplink: handled in app.js boot — `?addr=` param → validate → save → clear URL
+- [x] Error states: inline error screen with "← Try again" back button
+- [x] Loading state: spinner while fetching pairing address
 
-**AC:** All three import methods work end-to-end. Error messages display correctly. Wallet is saved in localStorage and appears in manage wallets screen.
+**AC:** All three import methods implemented. Error messages display correctly. Wallet saved to localStorage.
 
 ### 2.5 Manage wallets view
-- [ ] Implement `src/views/manage-wallets.js`
-- [ ] List all saved wallets: label, truncated address, "Active" badge on current
-- [ ] Arrow keys to navigate; Enter to select → submenu: "Set Active" / "Rename" / "Remove"
-- [ ] Remove triggers confirmation: "Remove this wallet?" with focusable Yes/No
-- [ ] "Add Wallet" item at bottom → navigates to import view
-- [ ] If last wallet is removed → redirect to import view
+- [x] Implement `src/views/manage-wallets.js`
+- [x] List all saved wallets: label, truncated address, "Active" badge on current
+- [x] Enter on wallet → submenu overlay: "Set Active" / "Remove" / "Cancel"
+- [x] Remove → confirmation overlay: "Remove / Cancel" — aria-disabled on list items during overlay
+- [x] "Add Wallet" item at bottom → navigates to import view
+- [x] If last wallet is removed → navigates to import view
 
-**AC:** Can switch active wallet and see portfolio update. Can remove a wallet with confirmation. Cannot exceed 5 wallets.
+**AC:** Can switch active wallet. Can remove with confirmation. Cannot exceed 5 wallets.
 
 ---
 

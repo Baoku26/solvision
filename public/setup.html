@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SolVision — Connect Wallet</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon { color: #00FFA3; font-size: 24px; }
+    .brand-name { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+
+    h1 { font-size: 18px; font-weight: 600; color: #ccc; }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+
+    label { font-size: 14px; color: #888; }
+
+    input[type="text"] {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: #fff;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus { border-color: #00FFA3; }
+    input[type="text"].error { border-color: #FF4757; }
+
+    .error-msg { font-size: 13px; color: #FF4757; min-height: 18px; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 14px;
+      background: #00FFA3;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button[type="submit"]:hover { opacity: 0.88; }
+    button[type="submit"]:disabled { opacity: 0.4; cursor: default; }
+
+    /* Code display */
+    .code-display {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .code-display.visible { display: flex; }
+
+    .code-label { font-size: 14px; color: #888; }
+
+    .code-value {
+      font-size: 52px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: #00FFA3;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    .code-instruction {
+      font-size: 15px;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    .countdown {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .countdown span { color: #888; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #222;
+    }
+
+    .steps {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #00FFA3;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <span class="brand-icon">◈</span>
+      <span class="brand-name">SolVision</span>
+    </div>
+
+    <h1>Connect your Solana wallet</h1>
+
+    <form id="pair-form">
+      <div class="field">
+        <label for="addr-input">Wallet address</label>
+        <input
+          type="text"
+          id="addr-input"
+          placeholder="Enter your Solana public key…"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <span class="error-msg" id="addr-error"></span>
+      </div>
+      <button type="submit" id="submit-btn" style="margin-top:16px">
+        Generate Code
+      </button>
+    </form>
+
+    <hr class="divider">
+
+    <div class="code-display" id="code-display">
+      <span class="code-label">Enter this code on your glasses</span>
+      <div class="code-value" id="code-value"></div>
+      <p class="code-instruction">
+        Open SolVision on your Ray-Ban glasses, select<br>
+        <strong>Import Wallet → Enter Pairing Code</strong>
+      </p>
+      <p class="countdown">Expires in <span id="countdown">10:00</span></p>
+    </div>
+
+    <ul class="steps">
+      <li>
+        <span class="step-num">1</span>
+        Paste your Solana wallet address above and tap Generate Code
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        Open SolVision on your Ray-Ban glasses
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        Select Import Wallet → Enter Pairing Code and type the 6-character code
+      </li>
+    </ul>
+  </div>
+
+  <script>
+    const BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+    const form      = document.getElementById('pair-form');
+    const input     = document.getElementById('addr-input');
+    const errorEl   = document.getElementById('addr-error');
+    const submitBtn = document.getElementById('submit-btn');
+    const display   = document.getElementById('code-display');
+    const codeEl    = document.getElementById('code-value');
+    const countEl   = document.getElementById('countdown');
+
+    let countdownTimer = null;
+
+    input.addEventListener('input', () => {
+      input.classList.remove('error');
+      errorEl.textContent = '';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const addr = input.value.trim();
+
+      if (!BASE58_RE.test(addr)) {
+        input.classList.add('error');
+        errorEl.textContent = 'Invalid Solana address — check for typos';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Generating…';
+
+      try {
+        const res = await fetch('/api/pair', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: addr }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to generate code');
+        }
+
+        showCode(data.code);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        input.classList.add('error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Generate Code';
+      }
+    });
+
+    function showCode(code) {
+      codeEl.textContent = code;
+      display.classList.add('visible');
+      form.style.display = 'none';
+      startCountdown(600);
+    }
+
+    function startCountdown(seconds) {
+      if (countdownTimer) clearInterval(countdownTimer);
+
+      function tick() {
+        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const s = String(seconds % 60).padStart(2, '0');
+        countEl.textContent = `${m}:${s}`;
+        if (seconds <= 0) {
+          clearInterval(countdownTimer);
+          countEl.textContent = 'Expired';
+          codeEl.style.opacity = '0.35';
+        }
+        seconds--;
+      }
+
+      tick();
+      countdownTimer = setInterval(tick, 1000);
+    }
+  </script>
+</body>
+</html>

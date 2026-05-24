@@ -9,6 +9,9 @@
     "dev": "npx serve public -l 3000",
     "deploy": "vercel --prod"
   },
+  "dependencies": {
+    "@vercel/kv": "^3.0.0"
+  },
   "devDependencies": {
     "happy-dom": "^20.9.0",
     "vitest": "^2.0.0"

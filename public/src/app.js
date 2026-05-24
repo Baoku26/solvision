@@ -1,5 +1,12 @@
 import { renderHeader, updateNetworkStatus } from './components/header.js';
-import { renderStatusBar } from './components/status-bar.js';
+import { renderStatusBar }                  from './components/status-bar.js';
+import { isValidSolanaAddress }             from './utils/base58.js';
+import { get, set }                         from './services/storage.js';
+import { STORAGE_KEYS, WALLET_MAX }         from './constants.js';
+
+// Real view registrations — imported here so they self-register
+import { register as registerImport  } from './views/import-wallet.js';
+import { register as registerManage  } from './views/manage-wallets.js';
 
 // ── App state ──────────────────────────────────────────────────
 export const state = {
@@ -11,12 +18,6 @@ export const state = {
 // ── View registry ──────────────────────────────────────────────
 const registry = {};
 
-/**
- * Register a view so the router can navigate to it.
- * render(container, params) — called once when view becomes active
- * mount(container, params)  — called after render; sets initial focus
- * unmount()                 — called before leaving the view
- */
 export function registerView(name, { render, mount, unmount } = {}) {
   registry[name] = {
     render:  render  || (() => {}),
@@ -82,33 +83,18 @@ function moveFocus(forward) {
   if (forward) {
     next = idx < 0 ? focusables[0] : focusables[(idx + 1) % focusables.length];
   } else {
-    next = idx <= 0
-      ? focusables[focusables.length - 1]
-      : focusables[idx - 1];
+    next = idx <= 0 ? focusables[focusables.length - 1] : focusables[idx - 1];
   }
   next?.focus();
 }
 
 document.addEventListener('keydown', (e) => {
   switch (e.key) {
-    case 'ArrowUp':
-      e.preventDefault();
-      moveFocus(false);
-      break;
-    case 'ArrowDown':
-      e.preventDefault();
-      moveFocus(true);
-      break;
-    // ArrowLeft / ArrowRight are consumed here only if no component
-    // handler already called e.stopPropagation() (e.g. char-selector).
-    case 'ArrowLeft':
-      e.preventDefault();
-      moveFocus(false);
-      break;
-    case 'ArrowRight':
-      e.preventDefault();
-      moveFocus(true);
-      break;
+    case 'ArrowUp':    e.preventDefault(); moveFocus(false); break;
+    case 'ArrowDown':  e.preventDefault(); moveFocus(true);  break;
+    // Components call e.stopPropagation() to intercept Left/Right (e.g. char-selector)
+    case 'ArrowLeft':  e.preventDefault(); moveFocus(false); break;
+    case 'ArrowRight': e.preventDefault(); moveFocus(true);  break;
     case 'Enter':
       e.preventDefault();
       if (document.activeElement && document.activeElement !== document.body) {
@@ -122,43 +108,64 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ── Stub view registrations (replaced by real views in Phase 2+) ──
+// ── Stub views (replaced by real views in Phase 3+) ───────────
 function stubView(label, accent = 'var(--sol-text-dim)') {
   return {
     render(container) {
       container.innerHTML = `
-        <div style="
-          flex:1; display:flex; flex-direction:column;
-          align-items:center; justify-content:center; gap:var(--space-3);
-        ">
-          <span style="font-size:var(--text-2xl); color:${accent};">◈</span>
-          <span style="font-size:var(--text-lg); color:var(--sol-text-dim);">${label}</span>
-        </div>
-      `;
+        <div style="flex:1;display:flex;flex-direction:column;
+                    align-items:center;justify-content:center;gap:var(--space-3)">
+          <span style="font-size:var(--text-2xl);color:${accent}">◈</span>
+          <span style="font-size:var(--text-lg);color:var(--sol-text-dim)">${label}</span>
+        </div>`;
     },
-    mount(container) {
-      const first = container.querySelector('.focusable');
-      first?.focus();
-    },
+    mount() {},
   };
 }
 
 registerView('dashboard', stubView('Dashboard', 'var(--sol-cyan)'));
 registerView('detail',    stubView('Token Detail'));
-registerView('settings',  stubView('Settings',   'var(--sol-purple)'));
-registerView('import',    stubView('Import Wallet', 'var(--sol-cyan)'));
-registerView('manage',    stubView('Manage Wallets'));
+registerView('settings',  stubView('Settings', 'var(--sol-purple)'));
+
+// Register real Phase 2 views
+registerImport();
+registerManage();
+
+// ── Deeplink detection ─────────────────────────────────────────
+function consumeDeeplink() {
+  const params = new URLSearchParams(window.location.search);
+  const addr   = params.get('addr');
+  if (!addr) return false;
+
+  // Clear param immediately so refreshes don't reprocess it
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete('addr');
+  history.replaceState({}, '', clean.toString());
+
+  if (!isValidSolanaAddress(addr)) return false;
+
+  const wallets = get(STORAGE_KEYS.WALLETS) || [];
+  if (wallets.some(w => w.address === addr)) return false; // already added
+  if (wallets.length >= WALLET_MAX) return false;
+
+  const label = `Wallet ${wallets.length + 1}`;
+  wallets.push({ address: addr, label, addedAt: Date.now() });
+  set(STORAGE_KEYS.WALLETS, wallets);
+  if (wallets.length === 1) set(STORAGE_KEYS.ACTIVE_WALLET, 0);
+  return true;
+}
 
 // ── Boot ───────────────────────────────────────────────────────
 function boot() {
   renderHeader(document.getElementById('app-header'));
   renderStatusBar(document.getElementById('app-status'));
 
-  // Read persisted settings so updateNetworkStatus reflects reality
-  const network = localStorage.getItem('sv_network') || 'mainnet-beta';
+  const network = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'mainnet-beta';
   updateNetworkStatus(network);
 
-  const wallets = JSON.parse(localStorage.getItem('sv_wallets') || '[]');
+  consumeDeeplink(); // may add a wallet from URL param
+
+  const wallets = get(STORAGE_KEYS.WALLETS) || [];
   navigateTo(wallets.length > 0 ? 'dashboard' : 'import');
 }
 

@@ -115,3 +115,327 @@
   min-width: 3ch;
   text-align: right;
 }
+
+/* ── Char Selector ────────────────────────────────────────── */
+.char-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.cs-progress {
+  font-size: var(--text-sm);
+  color: var(--sol-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-slots {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+.cs-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--sol-surface);
+  border: 1px solid var(--sol-border);
+  border-radius: 6px;
+  min-width: 44px;
+  cursor: default;
+  user-select: none;
+}
+
+.cs-slot.cs-active {
+  border-color: var(--sol-cyan);
+}
+
+.cs-arrow {
+  font-size: var(--text-xs);
+  color: var(--sol-text-muted);
+  line-height: 1;
+}
+
+.cs-char {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--sol-text);
+  min-width: 1ch;
+  text-align: center;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Import Wallet view ───────────────────────────────────── */
+.import-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5) var(--space-4);
+  gap: var(--space-4);
+  overflow: hidden;
+}
+
+.import-view.import-centered {
+  align-items: center;
+  justify-content: center;
+}
+
+.import-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.import-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--sol-cyan);
+}
+
+.import-sub {
+  font-size: var(--text-sm);
+  color: var(--sol-text-dim);
+}
+
+.import-menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.import-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--sol-surface);
+  border: 1px solid var(--sol-border);
+  border-radius: 8px;
+  text-align: left;
+  cursor: default;
+}
+
+.opt-icon {
+  font-size: var(--text-xl);
+  color: var(--sol-cyan);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.opt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opt-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--sol-text);
+}
+
+.opt-desc {
+  font-size: var(--text-xs);
+  color: var(--sol-text-dim);
+}
+
+.import-back {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--sol-text-dim);
+  border: 1px solid var(--sol-border);
+  border-radius: 6px;
+  cursor: default;
+  background: transparent;
+}
+
+.import-spinner {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--sol-border);
+  border-top-color: var(--sol-cyan);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.import-err-icon {
+  font-size: var(--text-2xl);
+  color: var(--sol-hot);
+}
+
+.import-instructions {
+  font-size: var(--text-base);
+  color: var(--sol-text);
+  line-height: 1.7;
+}
+
+.import-url {
+  color: var(--sol-cyan);
+  font-weight: var(--weight-medium);
+}
+
+/* ── Manage Wallets view ──────────────────────────────────── */
+.manage-view {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  gap: var(--space-3);
+  overflow: hidden;
+}
+
+.manage-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--sol-text);
+}
+
+.wallet-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.wallet-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--sol-surface);
+  border: 1px solid var(--sol-border);
+  border-radius: 8px;
+  cursor: default;
+  text-align: left;
+}
+
+.wallet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wallet-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--sol-text);
+}
+
+.wallet-addr {
+  font-size: var(--text-xs);
+  color: var(--sol-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.wallet-badge {
+  font-size: var(--text-xs);
+  color: var(--sol-cyan);
+  border: 1px solid var(--sol-cyan);
+  border-radius: 4px;
+  padding: 1px var(--space-2);
+  flex-shrink: 0;
+}
+
+.wallet-add {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: 1px dashed var(--sol-border);
+  border-radius: 8px;
+  color: var(--sol-text-dim);
+  font-size: var(--text-base);
+  cursor: default;
+}
+
+/* Overlay for submenu / confirmation */
+.manage-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  z-index: 10;
+}
+
+.manage-submenu {
+  background: var(--sol-surface);
+  border: 1px solid var(--sol-border);
+  border-radius: 12px;
+  padding: var(--space-4);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.submenu-title {
+  font-size: var(--text-sm);
+  color: var(--sol-text-dim);
+  text-align: center;
+  margin-bottom: var(--space-1);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--sol-border);
+}
+
+.submenu-action {
+  width: 100%;
+  padding: var(--space-3);
+  text-align: center;
+  font-size: var(--text-base);
+  font-family: inherit;
+  color: var(--sol-text);
+  background: var(--sol-surface-2);
+  border: 1px solid var(--sol-border);
+  border-radius: 6px;
+  cursor: default;
+}
+
+.submenu-action.danger { color: var(--sol-hot); border-color: var(--sol-hot); }
+
+.confirm-text {
+  font-size: var(--text-base);
+  color: var(--sol-text);
+  text-align: center;
+  padding-bottom: var(--space-2);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.confirm-btn {
+  flex: 1;
+  padding: var(--space-3);
+  text-align: center;
+  font-size: var(--text-base);
+  font-family: inherit;
+  color: var(--sol-text);
+  background: var(--sol-surface-2);
+  border: 1px solid var(--sol-border);
+  border-radius: 6px;
+  cursor: default;
+}
+
+.confirm-btn.danger { color: var(--sol-hot); border-color: var(--sol-hot); }

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" fill="#000000" rx="12"/>
+  <!-- Solana-style stacked bars -->
+  <rect x="14" y="16" width="36" height="6" rx="3" fill="#00FFA3"/>
+  <rect x="14" y="29" width="36" height="6" rx="3" fill="#9945FF"/>
+  <rect x="14" y="42" width="36" height="6" rx="3" fill="#00FFA3"/>
+</svg>

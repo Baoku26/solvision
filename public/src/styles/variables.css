@@ -1,0 +1,67 @@
+:root {
+  /* ── Brand colors ─────────────────────────────────────── */
+  --sol-cyan:   #00FFA3;  /* primary accent / positive change */
+  --sol-purple: #9945FF;  /* secondary accent */
+  --sol-hot:    #FF4757;  /* negative change / danger */
+  --sol-yellow: #FFD700;  /* warning / stale indicator */
+
+  /* ── Background layers (black = transparent on additive display) ── */
+  --sol-bg:        #000000;
+  --sol-surface:   #0D0D0D;  /* cards, panels */
+  --sol-surface-2: #1A1A1A;  /* nested surfaces, inputs */
+  --sol-overlay:   rgba(0, 0, 0, 0.85);
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --sol-text:       #FFFFFF;
+  --sol-text-dim:   #999999;  /* secondary labels */
+  --sol-text-muted: #555555;  /* placeholder, disabled */
+
+  /* ── Borders ──────────────────────────────────────────── */
+  --sol-border:       #2A2A2A;
+  --sol-border-light: #3D3D3D;
+
+  /* ── Focus ────────────────────────────────────────────── */
+  --sol-focus-ring: 0 0 0 2px var(--sol-cyan);
+  --sol-focus-glow: 0 0 0 2px var(--sol-cyan), 0 0 14px rgba(0, 255, 163, 0.35);
+
+  /* ── Spacing (4px base grid) ──────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Typography ───────────────────────────────────────── */
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;  /* minimum body size */
+  --text-md:   18px;
+  --text-lg:   20px;  /* minimum primary content */
+  --text-xl:   24px;
+  --text-2xl:  32px;
+  --text-3xl:  40px;
+  --text-4xl:  52px;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-bold:   700;
+
+  /* ── Layout ───────────────────────────────────────────── */
+  --viewport-w:    600px;
+  --viewport-h:    600px;
+  --header-h:      52px;
+  --status-bar-h:  36px;
+  --content-h:     calc(var(--viewport-h) - var(--header-h) - var(--status-bar-h));
+
+  /* ── Animation ────────────────────────────────────────── */
+  --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 120ms var(--ease-out);
+  --transition-base: 220ms var(--ease-out);
+  --transition-slow: 350ms var(--ease-out);
+}

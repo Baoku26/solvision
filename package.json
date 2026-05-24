@@ -1,0 +1,16 @@
+{
+  "name": "solvision",
+  "version": "0.1.0",
+  "description": "Solana wallet HUD for Meta Ray-Ban Display smart glasses",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "dev": "npx serve public -l 3000",
+    "deploy": "vercel --prod"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.9.0",
+    "vitest": "^2.0.0"
+  }
+}

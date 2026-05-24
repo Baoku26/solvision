@@ -1,0 +1,97 @@
+/* ── Reset ────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Root ─────────────────────────────────────────────────── */
+html {
+  width: var(--viewport-w);
+  height: var(--viewport-h);
+  overflow: hidden;
+  font-size: var(--text-base);
+}
+
+body {
+  width: var(--viewport-w);
+  height: var(--viewport-h);
+  overflow: hidden;
+  background-color: var(--sol-bg);
+  color: var(--sol-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  /* Additive waveguide: #000 is fully transparent — never use light backgrounds */
+}
+
+/* ── App container ────────────────────────────────────────── */
+#app {
+  width: var(--viewport-w);
+  height: var(--viewport-h);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── View containers ──────────────────────────────────────── */
+.view {
+  position: absolute;
+  inset: 0;
+  width: var(--viewport-w);
+  height: var(--viewport-h);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.view.active {
+  display: flex;
+}
+
+/* ── Typography defaults ──────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+}
+
+/* ── Interactive element resets ───────────────────────────── */
+button {
+  background: none;
+  border: none;
+  cursor: default;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  display: flex;
+  align-items: center;
+}
+
+a {
+  color: var(--sol-cyan);
+  text-decoration: none;
+}
+
+/* ── Utility classes ──────────────────────────────────────── */
+.text-cyan   { color: var(--sol-cyan); }
+.text-purple { color: var(--sol-purple); }
+.text-hot    { color: var(--sol-hot); }
+.text-dim    { color: var(--sol-text-dim); }
+.text-muted  { color: var(--sol-text-muted); }
+
+.text-xs   { font-size: var(--text-xs); }
+.text-sm   { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-lg   { font-size: var(--text-lg); }
+.text-xl   { font-size: var(--text-xl); }
+.text-2xl  { font-size: var(--text-2xl); }
+
+.font-bold   { font-weight: var(--weight-bold); }
+.font-medium { font-weight: var(--weight-medium); }
+
+.positive { color: var(--sol-cyan); }
+.negative { color: var(--sol-hot); }

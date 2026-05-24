@@ -1,0 +1,50 @@
+/* ── Strip default focus outlines — we manage focus ourselves ── */
+*:focus {
+  outline: none;
+}
+
+/* ── Focusable elements ───────────────────────────────────── */
+/*
+  Every interactive element on MRBD must have class="focusable" and tabindex="0".
+  Arrow keys (not Tab) drive navigation, but tabindex is still required for .focus() calls.
+*/
+.focusable {
+  border-radius: 6px;
+  transition:
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+/* Focus ring: cyan glow visible on additive waveguide display */
+.focusable:focus {
+  outline: none;
+  box-shadow: var(--sol-focus-glow);
+}
+
+/* ── Focus ring variants ──────────────────────────────────── */
+.focusable.focus-inset:focus {
+  box-shadow: inset var(--sol-focus-ring);
+}
+
+/* Subtle focus for items in dense lists */
+.focusable.focus-subtle:focus {
+  box-shadow: var(--sol-focus-ring);
+}
+
+/* ── Disabled focusable ───────────────────────────────────── */
+.focusable[disabled],
+.focusable[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Focus pulse animation for selected/active states ────── */
+@keyframes focus-pulse {
+  0%, 100% { box-shadow: var(--sol-focus-glow); }
+  50%       { box-shadow: 0 0 0 2px var(--sol-cyan), 0 0 22px rgba(0, 255, 163, 0.55); }
+}
+
+.focusable.pulsing:focus {
+  animation: focus-pulse 1.6s ease-in-out infinite;
+}

@@ -42,33 +42,33 @@
 ## Phase 1: Navigation & View System
 
 ### 1.1 D-pad input handler
-- [ ] Implement global `keydown` listener in `app.js` for ArrowUp/Down/Left/Right, Enter, Escape
-- [ ] Implement `moveFocus(direction)` — queries `.focusable:not([disabled])` scoped to the active view, cycles through them
-- [ ] Enter triggers `.click()` on the focused element
-- [ ] Escape calls `navigateBack()` in the router
+- [x] Implement global `keydown` listener in `app.js` for ArrowUp/Down/Left/Right, Enter, Escape
+- [x] Implement `moveFocus(direction)` — queries `.focusable:not([disabled])` scoped to the active view, cycles through them
+- [x] Enter triggers `.click()` on the focused element
+- [x] Escape calls `navigateBack()` in the router
 
 **AC:** Arrow keys cycle focus through focusable elements. Focus wraps at list boundaries. Enter activates the focused element. Works identically to Neural Band/captouch input on MRBD.
 
 ### 1.2 View router
-- [ ] Implement `src/app.js` router: `navigateTo(viewName, params)`, `navigateBack()`
-- [ ] Track navigation stack (max depth 2) for back navigation
-- [ ] Each view registers via `registerView(name, { render, mount, unmount })`
-- [ ] On navigate: call `unmount()` on current view, `render()` on target, `mount()` for focus setup
-- [ ] Create empty view containers in index.html (div per view, all `display: none` except dashboard)
+- [x] Implement `src/app.js` router: `navigateTo(viewName, params)`, `navigateBack()`
+- [x] Track navigation stack (max depth 2) for back navigation
+- [x] Each view registers via `registerView(name, { render, mount, unmount })`
+- [x] On navigate: call `unmount()` on current view, `render()` on target, `mount()` for focus setup
+- [x] Create empty view containers in index.html (div per view, all `display: none` except dashboard)
 
 **AC:** `navigateTo('detail', { tokenIndex: 0 })` switches views. Escape returns to previous view. Focus is set correctly after every transition. No view shows scrollbars.
 
 ### 1.3 Header component
-- [ ] Implement `src/components/header.js`: brand icon + name, network indicator (dot + label), live clock
-- [ ] Clock updates every 10 seconds via `setInterval`
-- [ ] Network label reads from state (`Mainnet` / `Devnet`)
-- [ ] Export `updateNetworkStatus(network)` for settings changes
+- [x] Implement `src/components/header.js`: brand icon + name, network indicator (dot + label), live clock
+- [x] Clock updates every 10 seconds via `setInterval`
+- [x] Network label reads from state (`Mainnet` / `Devnet`)
+- [x] Export `updateNetworkStatus(network)` for settings changes
 
 **AC:** Header renders at top of viewport. Clock shows current time in HH:MM format. Network dot pulses green.
 
 ### 1.4 Status bar component
-- [ ] Implement `src/components/status-bar.js`: nav hint arrows, TPS counter
-- [ ] Export `updateTPS(value)` called by TPS polling
+- [x] Implement `src/components/status-bar.js`: nav hint arrows, TPS counter
+- [x] Export `updateTPS(value)` called by TPS polling
 
 **AC:** Status bar renders at bottom. TPS displays formatted number with commas.
 

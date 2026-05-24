@@ -162,10 +162,36 @@ The `char-selector.js` component is reused for pairing code entry (alphanumeric,
 
 **Source files live at `public/src/`**, not the project-root `src/` shown in the original structure diagram. This is required because `npx serve public` only serves the `public/` directory — putting JS in `public/src/` makes `/src/app.js` reachable at dev time and on Vercel (via `outputDirectory: "public"`). The root-level `src/` directories are vestigial from the initial scaffold and unused.
 
+### Session Summary (2026-05-24 continued)
+
+**Phase 1: Navigation & View System is done (tasks 1.1 – 1.4).**
+
+#### 1.1 — D-pad input handler
+- Global `keydown` listener: ArrowUp/Down/Left/Right, Enter, Escape
+- `moveFocus(forward)` scoped to `.view.active`, cycles `.focusable:not([disabled])` elements
+- Enter triggers `.click()` on `document.activeElement`; Escape calls `navigateBack()`
+- Components can call `e.stopPropagation()` to intercept arrow keys (used by char-selector later)
+
+#### 1.2 — View router
+- `registerView(name, { render, mount, unmount })` — stores handler in registry
+- `navigateTo(viewName, params)` — unmounts current, activates next, calls render→mount
+- `navigateBack()` — pops nav stack (max depth 2), restores previous view
+- All 5 view containers added to `index.html`; stub registrations in place until Phase 2+
+- `#app` layout restructured: `#app-header` (52px) + `#app-main` (flex:1, position:relative) + `#app-status` (36px)
+
+#### 1.3 — Header component
+- `public/src/components/header.js` — brand icon + name, network dot (pulses green/yellow), live clock
+- Clock ticks every 10s via `setInterval`; `updateNetworkStatus(network)` exported
+
+#### 1.4 — Status bar component
+- `public/src/components/status-bar.js` — nav hint glyphs (↑↓ ↵ Esc), TPS display
+- `updateTPS(value)` exported; formats with `toLocaleString`
+
 ### Up Next
 
-Phase 1: Navigation & View System (tasks 1.1 – 1.4)
-- D-pad input handler (`ArrowUp/Down/Left/Right`, `Enter`, `Escape`)
-- View router (`navigateTo`, `navigateBack`, view register/mount/unmount lifecycle)
-- Header component (brand, network indicator, live clock)
-- Status bar component (nav hints, TPS counter)
+Phase 2: Wallet Import (tasks 2.1 – 2.5)
+- Pairing API (Vercel Edge Functions + KV)
+- Companion setup page (`public/setup.html`)
+- Character selector component (arrow-key character input, 6 or 44 slots)
+- Import wallet view (pairing code, deeplink, manual address)
+- Manage wallets view (list, switch, remove)

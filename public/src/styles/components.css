@@ -1,1 +1,117 @@
-/* Component styles — populated incrementally as components are built */
+/* ── Header ───────────────────────────────────────────────── */
+.app-header {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--sol-border);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brand-icon {
+  color: var(--sol-cyan);
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+
+.brand-name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.network-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.network-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sol-cyan);
+  animation: net-pulse 2s ease-in-out infinite;
+}
+
+.network-dot.devnet {
+  background: var(--sol-yellow);
+}
+
+@keyframes net-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.network-label {
+  font-size: var(--text-xs);
+  color: var(--sol-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.header-clock {
+  font-size: var(--text-sm);
+  color: var(--sol-text-dim);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Status bar ───────────────────────────────────────────── */
+.status-bar {
+  height: var(--status-bar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  border-top: 1px solid var(--sol-border);
+}
+
+.nav-hints {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--sol-text-muted);
+  font-size: var(--text-xs);
+}
+
+.hint-key {
+  color: var(--sol-text-dim);
+}
+
+.hint-sep {
+  color: var(--sol-border-light);
+}
+
+.tps-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.tps-label {
+  color: var(--sol-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tps-value {
+  color: var(--sol-text-dim);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}

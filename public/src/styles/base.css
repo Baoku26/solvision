@@ -33,17 +33,31 @@ body {
   width: var(--viewport-w);
   height: var(--viewport-h);
   overflow: hidden;
-  position: relative;
   display: flex;
   flex-direction: column;
+}
+
+/* ── App shell regions ────────────────────────────────────── */
+#app-header {
+  flex-shrink: 0;
+  height: var(--header-h);
+}
+
+#app-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#app-status {
+  flex-shrink: 0;
+  height: var(--status-bar-h);
 }
 
 /* ── View containers ──────────────────────────────────────── */
 .view {
   position: absolute;
   inset: 0;
-  width: var(--viewport-w);
-  height: var(--viewport-h);
   display: none;
   flex-direction: column;
   overflow: hidden;

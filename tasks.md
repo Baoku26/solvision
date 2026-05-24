@@ -177,51 +177,51 @@
 ## Phase 4: Dashboard & Detail Views
 
 ### 4.1 Dashboard view (home screen)
-- [ ] Implement `src/views/dashboard.js`
-- [ ] Portfolio section: total USD value (large), 24h weighted change, SOL balance
-- [ ] Token list: render token items with virtual list windowing (6 visible at a time)
-- [ ] Token list items are focusable; Enter opens detail view for that token
-- [ ] Settings button (focusable) at top of token list → navigates to settings
-- [ ] Wire up polling: prices (configurable interval), balances (30s), TPS (15s)
-- [ ] All pollers pause on `visibilitychange` hidden, resume on visible
+- [x] Implement `src/views/dashboard.js`
+- [x] Portfolio section: total USD value (large), 24h weighted change, SOL balance
+- [x] Token list: render token items with virtual list windowing (6 visible at a time)
+- [x] Token list items are focusable; Enter opens detail view for that token
+- [x] Settings button (focusable) at top of token list → navigates to settings
+- [x] Wire up polling: prices (configurable interval), balances (30s), TPS (15s)
+- [x] All pollers pause on `visibilitychange` hidden, resume on visible
 
 **AC:** Dashboard shows real portfolio data from the imported wallet. Prices update every 10s (default). Arrow keys navigate the token list. Focus wraps correctly. Battery-conscious: no polling when backgrounded.
 
 ### 4.2 Token item component
-- [ ] Implement `src/components/token-item.js`
-- [ ] Displays: icon (colored circle), symbol, name, holdings, USD value, price, 24h change
-- [ ] Change color: green (`--sol-cyan`) for positive, red (`--sol-hot`) for negative
-- [ ] Focus state: cyan border + glow per design spec
-- [ ] Export `update(tokenData)` for in-place updates without re-creating DOM node
+- [x] Implement `src/components/token-item.js`
+- [x] Displays: icon (colored circle), symbol, name, holdings, USD value, price, 24h change
+- [x] Change color: green (`--sol-cyan`) for positive, red (`--sol-hot`) for negative
+- [x] Focus state: cyan border + glow per design spec
+- [x] Export `update(tokenData)` for in-place updates without re-creating DOM node
 
 **AC:** Token item matches prototype design. Updates in place without flickering on price ticks.
 
 ### 4.3 Token detail view
-- [ ] Implement `src/views/detail.js`
-- [ ] Large price display with 24h change (colored)
-- [ ] Sparkline canvas chart: 24h price history, gradient fill, pulsing end-dot
-- [ ] Stats grid: 24h high, 24h low, holdings quantity, holdings USD value
-- [ ] Back button (focusable) → returns to dashboard with focus on the same token
-- [ ] Auto-updates with each price tick
+- [x] Implement `src/views/detail.js`
+- [x] Large price display with 24h change (colored)
+- [x] Sparkline canvas chart: 24h price history, gradient fill, pulsing end-dot
+- [x] Stats grid: 24h high, 24h low, holdings quantity, holdings USD value
+- [x] Back button (focusable) → returns to dashboard with focus on the same token
+- [x] Auto-updates with each price tick
 
 **AC:** Detail view renders for any token. Sparkline animates smoothly. Back returns to the correct list position.
 
 ### 4.4 Sparkline component
-- [ ] Implement `src/components/sparkline.js`
-- [ ] Canvas rendering at 2x DPR for retina sharpness
-- [ ] Gradient fill: line color to transparent
-- [ ] Pulsing end-dot at the current price
-- [ ] `update(dataPoints[])` redraws efficiently with `requestAnimationFrame`
-- [ ] Color: green if last > first, red if last < first
+- [x] Implement `src/components/sparkline.js`
+- [x] Canvas rendering at 2x DPR for retina sharpness
+- [x] Gradient fill: line color to transparent
+- [x] Pulsing end-dot at the current price
+- [x] `update(dataPoints[])` redraws efficiently with `requestAnimationFrame`
+- [x] Color: green if last > first, red if last < first
 
 **AC:** Sparkline renders a smooth line chart. Updates without flicker. Colors match price direction.
 
 ### 4.5 Notification component
-- [ ] Implement `src/components/notification.js`
-- [ ] Slide-in banner from top, auto-dismiss after 4s
-- [ ] FIFO queue: only 1 visible at a time, queued notifications show sequentially
-- [ ] Display: icon + text + timestamp ("just now")
-- [ ] Does not steal focus from current view
+- [x] Implement `src/components/notification.js`
+- [x] Slide-in banner from top, auto-dismiss after 4s
+- [x] FIFO queue: only 1 visible at a time, queued notifications show sequentially
+- [x] Display: icon + text + timestamp ("just now")
+- [x] Does not steal focus from current view
 
 **AC:** Notifications slide in and out smoothly. Multiple notifications queue correctly. Focus is not disrupted.
 

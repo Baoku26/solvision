@@ -1,12 +1,14 @@
 import { renderHeader, updateNetworkStatus } from './components/header.js';
 import { renderStatusBar }                  from './components/status-bar.js';
+import { initNotifications }                from './components/notification.js';
 import { isValidSolanaAddress }             from './utils/base58.js';
 import { get, set }                         from './services/storage.js';
 import { STORAGE_KEYS, WALLET_MAX }         from './constants.js';
 
-// Real view registrations — imported here so they self-register
-import { register as registerImport  } from './views/import-wallet.js';
-import { register as registerManage  } from './views/manage-wallets.js';
+import { register as registerDashboard } from './views/dashboard.js';
+import { register as registerDetail    } from './views/detail.js';
+import { register as registerImport    } from './views/import-wallet.js';
+import { register as registerManage    } from './views/manage-wallets.js';
 
 // ── App state ──────────────────────────────────────────────────
 export const state = {
@@ -108,28 +110,26 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ── Stub views (replaced by real views in Phase 3+) ───────────
+// ── Stub view for unimplemented screens ───────────────────────
 function stubView(label, accent = 'var(--sol-text-dim)') {
   return {
     render(container) {
-      container.innerHTML = `
-        <div style="flex:1;display:flex;flex-direction:column;
-                    align-items:center;justify-content:center;gap:var(--space-3)">
-          <span style="font-size:var(--text-2xl);color:${accent}">◈</span>
-          <span style="font-size:var(--text-lg);color:var(--sol-text-dim)">${label}</span>
-        </div>`;
+      container.innerHTML =
+        `<div style="flex:1;display:flex;flex-direction:column;` +
+        `align-items:center;justify-content:center;gap:var(--space-3)">` +
+        `<span style="font-size:var(--text-2xl);color:${accent}">◈</span>` +
+        `<span style="font-size:var(--text-lg);color:var(--sol-text-dim)">${label}</span>` +
+        `</div>`;
     },
     mount() {},
   };
 }
 
-registerView('dashboard', stubView('Dashboard', 'var(--sol-cyan)'));
-registerView('detail',    stubView('Token Detail'));
-registerView('settings',  stubView('Settings', 'var(--sol-purple)'));
-
-// Register real Phase 2 views
+registerDashboard();
+registerDetail();
 registerImport();
 registerManage();
+registerView('settings', stubView('Settings', 'var(--sol-purple)'));
 
 // ── Deeplink detection ─────────────────────────────────────────
 function consumeDeeplink() {
@@ -159,6 +159,7 @@ function consumeDeeplink() {
 function boot() {
   renderHeader(document.getElementById('app-header'));
   renderStatusBar(document.getElementById('app-status'));
+  initNotifications();
 
   const network = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'mainnet-beta';
   updateNetworkStatus(network);

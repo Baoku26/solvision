@@ -17,7 +17,8 @@
 }
 
 /* Focus ring: cyan glow visible on additive waveguide display */
-.focusable:focus {
+/* token-item handles its own focus style (border + glow) */
+.focusable:not(.token-item):focus {
   outline: none;
   box-shadow: var(--sol-focus-glow);
 }

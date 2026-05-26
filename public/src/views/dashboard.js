@@ -5,7 +5,7 @@ import { getBalance, getTokenAccountsByOwner, getRecentTPS } from '../services/r
 import { getBatchPrices, getCachedPrices }    from '../services/prices.js';
 import { wsMonitor }                          from '../services/websocket.js';
 import { createPoller }                       from '../utils/polling.js';
-import { formatPrice }                        from '../utils/format.js';
+import { formatPrice, formatCompact, truncateAddress } from '../utils/format.js';
 import { checkPriceAlerts }                   from '../utils/alerts.js';
 import { get }                                from '../services/storage.js';
 
@@ -60,7 +60,7 @@ function _buildTokenList(solBalance, tokenAccounts, prices) {
 
 function _fmtChange(pct) {
   if (pct === null || pct === undefined) return '—';
-  return (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  return (pct >= 0 ? '▲ ' : '▼ ') + Math.abs(pct).toFixed(2) + '%';
 }
 
 function _updatePortfolio() {
@@ -83,12 +83,13 @@ function _updatePortfolio() {
   if (elTotal)  elTotal.textContent  = formatPrice(totalUSD);
   if (elChange) {
     elChange.textContent = _fmtChange(change24h);
-    elChange.style.color = change24h === null ? 'var(--sol-text-dim)'
-                         : change24h >= 0     ? 'var(--sol-cyan)'
-                         :                      'var(--sol-hot)';
+    elChange.className   = 'dash-change ' + (
+      change24h === null ? 'dim' : change24h >= 0 ? 'up' : 'down'
+    );
   }
   if (elSol && solToken) {
-    elSol.textContent = `${(solToken.balance || 0).toFixed(4)} SOL`;
+    const solUSD = (solToken.balance || 0) * (solToken.price || 0);
+    elSol.textContent = `${(solToken.balance || 0).toFixed(4)} SOL ≈ $${formatCompact(solUSD)}`;
   }
 
   // Stale indicator: prices older than 60s
@@ -255,19 +256,25 @@ function _setupKeyHandler(container) {
 // ── View lifecycle ─────────────────────────────────────────────
 function _render(container) {
   _container = container;
+  const address = _getActiveAddress();
   container.innerHTML =
     `<div class="dash-portfolio">` +
-      `<div class="dash-total">—</div>` +
-      `<div class="dash-meta">` +
-        `<span class="dash-change">—</span>` +
-        `<span class="dash-sep"> · </span>` +
-        `<span class="dash-sol">—</span>` +
-        `<span class="dash-sep"> · </span>` +
+      `<div class="dash-port-label">PORTFOLIO VALUE</div>` +
+      `<div class="dash-port-addr">${truncateAddress(address || '')}</div>` +
+      `<div class="dash-port-main">` +
+        `<span class="dash-total">—</span>` +
+        `<span class="dash-change dim">—</span>` +
         `<span class="dash-stale" style="display:none">⏱ Stale</span>` +
       `</div>` +
+      `<div class="dash-sol">—</div>` +
     `</div>` +
     `<div class="dash-list-header">` +
-      `<button class="dash-settings focusable" tabindex="0">⚙ Settings</button>` +
+      `<span class="dash-section-label">TOKENS</span>` +
+      `<div class="dash-header-right">` +
+        `<span class="dash-live-dot"></span>` +
+        `<span class="dash-live-label">LIVE</span>` +
+        `<button class="dash-settings focusable" tabindex="0">⚙</button>` +
+      `</div>` +
     `</div>` +
     `<div class="dash-list" id="dash-token-list"></div>`;
 

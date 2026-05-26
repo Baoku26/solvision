@@ -4,6 +4,9 @@ import { STORAGE_KEYS, RPC_ENDPOINTS } from '../constants.js';
 const BACKOFF_INITIAL = 1_000;
 const BACKOFF_MAX     = 30_000;
 
+// Cached WSS URL for the Helius proxy (fetched once per session)
+let _heliusWssUrl = null;
+
 // ── Internal factory ───────────────────────────────────────────
 function createWebSocketMonitor() {
   let ws              = null;
@@ -19,8 +22,21 @@ function createWebSocketMonitor() {
   function nextId() { return ++reqId; }
 
   // ── WS URL derivation ────────────────────────────────────────
-  function getWsUrl() {
+  async function getWsUrl() {
     const http = get(STORAGE_KEYS.RPC_ENDPOINT) || RPC_ENDPOINTS.MAINNET_PUBLIC;
+    if (http === RPC_ENDPOINTS.HELIUS_PROXY) {
+      if (!_heliusWssUrl) {
+        try {
+          const res = await fetch(RPC_ENDPOINTS.HELIUS_PROXY);
+          const { wss } = await res.json();
+          _heliusWssUrl = wss;
+        } catch {
+          return RPC_ENDPOINTS.MAINNET_PUBLIC.replace('https://', 'wss://');
+        }
+      }
+      return _heliusWssUrl;
+    }
+    _heliusWssUrl = null; // clear cache when switching away from Helius
     return http.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://');
   }
 
@@ -103,13 +119,13 @@ function createWebSocketMonitor() {
     _openSocket();
   }
 
-  function _openSocket() {
+  async function _openSocket() {
     if (ws) {
       ws.onclose = null; // prevent reconnect from old socket
       ws.close();
     }
 
-    const url = getWsUrl();
+    const url = await getWsUrl();
     ws = new WebSocket(url);
 
     ws.onopen = () => {

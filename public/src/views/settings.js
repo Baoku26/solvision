@@ -41,8 +41,8 @@ function cycleArr(arr, current) {
 
 function getRpcPreset() {
   const ep = get(STORAGE_KEYS.RPC_ENDPOINT) || '';
-  if (ep.includes('helius'))    return 'helius';
-  if (ep.includes('quicknode')) return 'quicknode';
+  if (ep === RPC_ENDPOINTS.HELIUS_PROXY)   return 'helius';
+  if (ep.includes('quicknode'))             return 'quicknode';
   return 'public';
 }
 
@@ -96,9 +96,9 @@ function cycleFilter() {
 }
 
 function setRpcPreset(key) {
-  if (key === 'public') {
-    set(STORAGE_KEYS.RPC_ENDPOINT, RPC_ENDPOINTS.MAINNET_PUBLIC);
-  }
+  if (key === 'public') set(STORAGE_KEYS.RPC_ENDPOINT, RPC_ENDPOINTS.MAINNET_PUBLIC);
+  if (key === 'helius') set(STORAGE_KEYS.RPC_ENDPOINT, RPC_ENDPOINTS.HELIUS_PROXY);
+  // quicknode: no URL until user configures it via companion page
   // For helius/quicknode: mark as selected so display updates, but don't break the endpoint
   // (actual URL would be configured via companion page in a future release).
   dispatch(STORAGE_KEYS.RPC_ENDPOINT, key);

@@ -20,6 +20,7 @@ export const CHARSETS = {
 
 export const RPC_ENDPOINTS = {
   MAINNET_PUBLIC: 'https://api.mainnet-beta.solana.com',
+  HELIUS_PROXY:   '/api/rpc',
 };
 
 export const DEFAULTS = {

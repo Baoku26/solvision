@@ -3,7 +3,7 @@ import { renderStatusBar, setOfflineState } from './components/status-bar.js';
 import { initNotifications }                from './components/notification.js';
 import { isValidSolanaAddress }             from './utils/base58.js';
 import { get, set }                         from './services/storage.js';
-import { STORAGE_KEYS, WALLET_MAX }         from './constants.js';
+import { STORAGE_KEYS, WALLET_MAX, RPC_ENDPOINTS } from './constants.js';
 
 import { register as registerDashboard } from './views/dashboard.js';
 import { register as registerDetail    } from './views/detail.js';
@@ -156,11 +156,11 @@ async function boot() {
   renderStatusBar(document.getElementById('app-status'));
   initNotifications();
 
-  // Remove legacy network key and force mainnet RPC
+  // Remove legacy network key; migrate devnet or unset RPC → Helius proxy
   localStorage.removeItem('sv_network');
   const storedRpc = localStorage.getItem(STORAGE_KEYS.RPC_ENDPOINT);
-  if (storedRpc && storedRpc.includes('devnet')) {
-    localStorage.removeItem(STORAGE_KEYS.RPC_ENDPOINT);
+  if (!storedRpc || storedRpc.includes('devnet')) {
+    set(STORAGE_KEYS.RPC_ENDPOINT, RPC_ENDPOINTS.HELIUS_PROXY);
   }
 
   consumeDeeplink(); // may add a wallet from URL param

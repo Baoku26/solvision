@@ -316,3 +316,84 @@ The `char-selector.js` component is reused for pairing code entry (alphanumeric,
 ### Current State
 
 All 6 phases complete. 109 tests passing. 35/35 MRBD compliance checks passing. Ready for production deploy (`vercel --prod`) and on-device testing.
+
+---
+
+## Session Summary (2026-05-26)
+
+### Infrastructure & Deployment Fixes
+
+#### Vercel deployment errors resolved
+- Removed invalid `"functions": { "api/**/*.js": { "runtime": "edge" } }` block from `vercel.json`; runtime is declared via `export const config = { runtime: 'edge' }` in each Edge Function file instead
+- Fixed SPA rewrite to exclude `setup.html`, `icons/`, and `manifest.webmanifest` from being rewritten to `index.html`
+- Pairing API migrated from `@vercel/kv` to direct Upstash Redis REST API calls (`KV_REST_API_URL` / `KV_REST_API_TOKEN`); returns JSON 503 (not HTML crash) when KV not configured
+- Removed `@vercel/kv` from `package.json`
+
+#### Helius RPC proxy (`api/rpc.js`)
+- New Edge Function that injects `HELIUS_API_KEY` server-side; never exposes the key to the client
+- `GET /api/rpc` → returns `{ wss: "wss://mainnet.helius-rpc.com/?api-key=..." }` for WebSocket connections
+- `POST /api/rpc` → proxies JSON-RPC calls to `https://mainnet.helius-rpc.com/?api-key=...`
+- `RPC_ENDPOINTS.HELIUS_PROXY = '/api/rpc'` added to `constants.js`
+- `websocket.js` `getWsUrl()` made async; fetches WSS URL from `GET /api/rpc` when Helius proxy active; caches in module-level `_heliusWssUrl`
+
+#### Devnet removed
+- `STORAGE_KEYS.NETWORK`, `DEFAULTS.NETWORK`, `RPC_ENDPOINTS.DEVNET_PUBLIC` removed from `constants.js`
+- Network menu item removed from settings
+- `updateNetworkStatus` export removed from `header.js` (network dot now always shows Mainnet green)
+- Boot migration: removes `sv_network` from localStorage and resets any devnet RPC endpoint to `HELIUS_PROXY`
+
+### UI Redesign
+
+#### Token logo images
+- Added `logoURI` to all 15 `TOKEN_REGISTRY` entries using verified CDN URLs:
+  - SOL, USDC, RAY, mSOL, bSOL, ETH (Wormhole), WBTC, ORCA → `cdn.jsdelivr.net/gh/solana-labs/token-list`
+  - USDT → `raw.githubusercontent.com` SVG
+  - JUP → `static.jup.ag`; BONK → `arweave.net`; WIF → `ipfs.nftstorage.link`
+  - JTO → `metadata.jito.network`; PYTH → `pyth.network`; RNDR → `assets.coingecko.com`
+- `token-item.js` renders a gradient circle background (token color) with a letter fallback; `<img>` loads on top and hides itself on `onerror`
+
+#### Dashboard redesign
+- Portfolio section: `PORTFOLIO VALUE` label, truncated wallet address, total USD + ▲/▼ weighted 24h change, SOL balance line (`X SOL ≈ $Y`)
+- Token list header: `TOKENS` label + pulsing `LIVE` dot + ⚙ settings button
+- Token rows: 40px gradient icon circle, symbol/holdings sub-label, price + ▲/▼ change, USD value
+- Token item focus: glowing cyan border + box-shadow (distinct from generic `.focusable` glow)
+- `▲`/`▼` triangle change indicators throughout (replaces `+`/`-` prefix)
+
+#### Header cleanup
+- Removed `• MAINNET` network indicator; header now shows brand (left) and clock (right) only
+
+### New Features
+
+#### Trending token alerts (`public/src/services/trending.js`)
+New service with two alert types, both controlled by Settings → Trending Alerts:
+
+**Price-action alerts (known tokens)**
+- `checkTrendingAlerts(threshold, timeframe)` — checks all 15 TOKEN_REGISTRY tokens via `GET https://api.dexscreener.com/latest/dex/tokens/{mints}`
+- Picks highest-volume Solana pair per token; fires if `|changeH1|` or `|changeH24|` exceeds threshold
+- Notification: `◉ SOL ▲ 12.3% · 24h`
+
+**Trending discovery (new tokens)**
+- `checkTrendingDiscovery(threshold, timeframe)` — two-step DexScreener call:
+  1. `GET https://api.dexscreener.com/token-boosts/top/v1` → top 10 Solana-chain boosted token addresses not in TOKEN_REGISTRY
+  2. `GET https://api.dexscreener.com/latest/dex/tokens/{addresses}` → price data for those tokens
+- Fires for tokens with significant moves outside the known registry
+- Notification: `◉ MYRO ▲ 83.1% · Trending`
+
+**Shared mechanics**
+- Module-level `_alerted` Set prevents re-alerting the same token within a session
+- `resetTrendingAlerted()` clears dedup state when user changes settings
+- Poller runs every 5 minutes; both checks run each cycle; starts immediately on `start()`
+- `'trending'` type added to `notification.js _iconFor` → renders `◉` icon
+
+#### Trending alerts settings (Settings → Trending Alerts)
+- New `_mode = 'trending'` in `settings.js`; submenu overlay with three controls:
+  - **Enabled**: ON/OFF toggle (cyan when on, dim when off)
+  - **Threshold**: cycles 5% → 10% → 20% → 50% (dimmed when disabled)
+  - **Timeframe**: toggles 1h / 24h (dimmed when disabled)
+- Saves immediately on each click; focus restored to the clicked button after re-render
+- `STORAGE_KEYS.TRENDING_ALERTS = 'sv_trending_alerts'` and `DEFAULTS.TRENDING_ALERTS = { enabled: false, threshold: 10, timeframe: 'h24' }` added to `constants.js`
+- Dashboard `_settingsHandler` handles `STORAGE_KEYS.TRENDING_ALERTS`: resets dedup, starts/stops poller
+
+### Current State
+
+All 6 phases complete plus trending alerts feature. 109 tests passing. Deployed at `https://solvision-one.vercel.app`. Helius RPC proxy active (API key server-side). Pairing via Upstash Redis KV.

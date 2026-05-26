@@ -7,7 +7,7 @@ import { wsMonitor }                          from '../services/websocket.js';
 import { createPoller }                       from '../utils/polling.js';
 import { formatPrice, formatCompact, truncateAddress } from '../utils/format.js';
 import { checkPriceAlerts }                           from '../utils/alerts.js';
-import { checkTrendingAlerts, resetTrendingAlerted }  from '../services/trending.js';
+import { checkTrendingAlerts, checkTrendingDiscovery, resetTrendingAlerted } from '../services/trending.js';
 import { pushNotification }                           from '../components/notification.js';
 import { get }                                        from '../services/storage.js';
 
@@ -217,11 +217,18 @@ async function _fetchTPS() {
 function _startTrendingPoll(cfg) {
   if (_trendingPoll) { _trendingPoll.stop(); _trendingPoll = null; }
   _trendingPoll = createPoller(async () => {
-    const alerts = await checkTrendingAlerts(cfg.threshold, cfg.timeframe);
-    for (const a of alerts) {
+    const tf     = cfg.timeframe === 'h1' ? '1h' : '24h';
+    // Known TOKEN_REGISTRY tokens: price action check
+    const known  = await checkTrendingAlerts(cfg.threshold, cfg.timeframe);
+    for (const a of known) {
       const dir = a.change >= 0 ? '▲' : '▼';
-      pushNotification('trending',
-        `${a.symbol} ${dir} ${Math.abs(a.change).toFixed(1)}% · ${a.timeframe === 'h1' ? '1h' : '24h'}`);
+      pushNotification('trending', `${a.symbol} ${dir} ${Math.abs(a.change).toFixed(1)}% · ${tf}`);
+    }
+    // Trending discovery: tokens gaining momentum outside TOKEN_REGISTRY
+    const found = await checkTrendingDiscovery(cfg.threshold, cfg.timeframe);
+    for (const a of found) {
+      const dir = a.change >= 0 ? '▲' : '▼';
+      pushNotification('trending', `${a.symbol} ${dir} ${Math.abs(a.change).toFixed(1)}% · Trending`);
     }
   }, 5 * 60_000);
   _trendingPoll.start();

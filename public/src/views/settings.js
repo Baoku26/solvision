@@ -2,7 +2,6 @@ import { get, set }                             from '../services/storage.js';
 import { STORAGE_KEYS, DEFAULTS, TOKEN_REGISTRY,
          RPC_ENDPOINTS }                         from '../constants.js';
 import { registerView, navigateTo }              from '../app.js';
-import { updateNetworkStatus }                   from '../components/header.js';
 import { pushNotification }                      from '../components/notification.js';
 import { getCachedPrices }                       from '../services/prices.js';
 import { formatPrice }                           from '../utils/format.js';
@@ -40,10 +39,6 @@ function cycleArr(arr, current) {
   return arr[(i + 1) % arr.length];
 }
 
-function getNetworkLabel() {
-  return (get(STORAGE_KEYS.NETWORK) || DEFAULTS.NETWORK) === 'mainnet-beta' ? 'Mainnet' : 'Devnet';
-}
-
 function getRpcPreset() {
   const ep = get(STORAGE_KEYS.RPC_ENDPOINT) || '';
   if (ep.includes('helius'))    return 'helius';
@@ -76,19 +71,6 @@ function dispatch(key, value) {
 }
 
 // ── Actions ────────────────────────────────────────────────────
-function cycleNetwork() {
-  const curr = get(STORAGE_KEYS.NETWORK) || DEFAULTS.NETWORK;
-  const next = curr === 'mainnet-beta' ? 'devnet' : 'mainnet-beta';
-  set(STORAGE_KEYS.NETWORK, next);
-  if (getRpcPreset() === 'public') {
-    set(STORAGE_KEYS.RPC_ENDPOINT,
-      next === 'devnet' ? RPC_ENDPOINTS.DEVNET_PUBLIC : RPC_ENDPOINTS.MAINNET_PUBLIC);
-  }
-  updateNetworkStatus(next);
-  dispatch(STORAGE_KEYS.NETWORK, next);
-  renderMenu();
-}
-
 function cycleRefresh() {
   const curr = get(STORAGE_KEYS.REFRESH_INTERVAL) || DEFAULTS.REFRESH_INTERVAL;
   const next = cycleArr(REFRESH_CYCLE, curr);
@@ -115,9 +97,7 @@ function cycleFilter() {
 
 function setRpcPreset(key) {
   if (key === 'public') {
-    const network = get(STORAGE_KEYS.NETWORK) || DEFAULTS.NETWORK;
-    set(STORAGE_KEYS.RPC_ENDPOINT,
-      network === 'devnet' ? RPC_ENDPOINTS.DEVNET_PUBLIC : RPC_ENDPOINTS.MAINNET_PUBLIC);
+    set(STORAGE_KEYS.RPC_ENDPOINT, RPC_ENDPOINTS.MAINNET_PUBLIC);
   }
   // For helius/quicknode: mark as selected so display updates, but don't break the endpoint
   // (actual URL would be configured via companion page in a future release).
@@ -130,7 +110,6 @@ function setRpcPreset(key) {
 function getMenuItems() {
   return [
     { id: 'wallet',   label: 'Active Wallet',  value: esc(getActiveWalletLabel()),           arrow: '›',  action: () => navigateTo('manage') },
-    { id: 'network',  label: 'Network',         value: getNetworkLabel(),                     arrow: '⟳',  action: cycleNetwork },
     { id: 'rpc',      label: 'RPC Endpoint',    value: getRpcLabel(),                         arrow: '›',  action: showRpc },
     { id: 'refresh',  label: 'Price Refresh',   value: getRefreshLabel(),                     arrow: '⟳',  action: cycleRefresh },
     { id: 'currency', label: 'Currency',        value: get(STORAGE_KEYS.CURRENCY) || DEFAULTS.CURRENCY, arrow: '⟳', action: cycleCurrency },

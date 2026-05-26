@@ -24,19 +24,6 @@ export function renderHeader(container) {
   return el;
 }
 
-export function updateNetworkStatus(network) {
-  const dot   = document.querySelector('.network-dot');
-  const label = document.querySelector('.network-label');
-  if (!dot || !label) return;
-
-  if (network === 'devnet') {
-    dot.classList.add('devnet');
-    label.textContent = 'Devnet';
-  } else {
-    dot.classList.remove('devnet');
-    label.textContent = 'Mainnet';
-  }
-}
 
 function _startClock(el) {
   if (_clockInterval) clearInterval(_clockInterval);

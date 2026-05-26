@@ -1,4 +1,4 @@
-import { renderHeader, updateNetworkStatus } from './components/header.js';
+import { renderHeader } from './components/header.js';
 import { renderStatusBar, setOfflineState } from './components/status-bar.js';
 import { initNotifications }                from './components/notification.js';
 import { isValidSolanaAddress }             from './utils/base58.js';
@@ -155,9 +155,6 @@ async function boot() {
   renderHeader(document.getElementById('app-header'));
   renderStatusBar(document.getElementById('app-status'));
   initNotifications();
-
-  const network = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'mainnet-beta';
-  updateNetworkStatus(network);
 
   consumeDeeplink(); // may add a wallet from URL param
 

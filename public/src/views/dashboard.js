@@ -7,7 +7,7 @@ import { wsMonitor }                          from '../services/websocket.js';
 import { createPoller }                       from '../utils/polling.js';
 import { formatPrice }                        from '../utils/format.js';
 import { checkPriceAlerts }                   from '../utils/alerts.js';
-import { get }                                from '../services/storage.js';
+import { get, remove }                        from '../services/storage.js';
 
 import { STORAGE_KEYS, DEFAULTS, getTokenMeta } from '../constants.js';
 
@@ -324,9 +324,23 @@ function _mount(container, _params) {
       _pollers[0]?.setInterval(value);
     }
     if (key === STORAGE_KEYS.NETWORK || key === STORAGE_KEYS.RPC_ENDPOINT) {
-      // Reconnect WS to pick up new endpoint
+      // Clear stale data from the previous network
+      _cachedSol   = null;
+      _cachedAccts = null;
+      _tokens      = [];
+      _tokenNodes  = [];
+      _windowStart = 0;
+      _focusedIdx  = 0;
+      remove(STORAGE_KEYS.PRICE_CACHE);
+      remove(STORAGE_KEYS.PRICE_HISTORY);
+      const listEl = _container?.querySelector('#dash-token-list');
+      if (listEl) listEl.innerHTML = '';
+      _updatePortfolio();
+
+      // Reconnect WS and re-fetch from scratch
       const addr = _getActiveAddress();
       if (addr) { wsMonitor.disconnect(); wsMonitor.connect(addr); _wsAddress = addr; }
+      _fetchAll().then(() => _fetchPrices());
     }
   };
   document.addEventListener('sv:settings-changed', _settingsHandler);

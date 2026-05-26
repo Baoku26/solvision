@@ -1,5 +1,3 @@
-import { kv } from '@vercel/kv';
-
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -22,11 +20,26 @@ function generateCode() {
   return Array.from(bytes, b => chars[b % chars.length]).join('');
 }
 
+function kvAvailable() {
+  return !!(
+    globalThis.process?.env?.KV_REST_API_URL ||
+    globalThis.KV_REST_API_URL
+  );
+}
+
 export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  if (!kvAvailable()) {
+    return json({
+      error: 'KV store not configured — link a Vercel KV database to this project in the Vercel dashboard',
+    }, 503);
+  }
+
+  const { kv } = await import('@vercel/kv');
 
   // Rate limit: 5 POSTs per IP per minute
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';

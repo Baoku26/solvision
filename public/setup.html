@@ -246,7 +246,7 @@
         try {
           data = await res.json();
         } catch {
-          throw new Error('Pairing server unavailable — use the deployed app URL, not localhost');
+          throw new Error('Pairing server unavailable — make sure this page is open at the deployed Vercel URL');
         }
 
         if (!res.ok) {

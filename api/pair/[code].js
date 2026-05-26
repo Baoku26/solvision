@@ -11,6 +11,8 @@ function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: CORS });
 }
 
+export const config = { runtime: 'edge' };
+
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
 

@@ -22,6 +22,8 @@ function generateCode() {
   return Array.from(bytes, b => chars[b % chars.length]).join('');
 }
 
+export const config = { runtime: 'edge' };
+
 export default async function handler(req) {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);

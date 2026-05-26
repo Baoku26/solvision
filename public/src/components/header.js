@@ -9,10 +9,6 @@ export function renderHeader(container) {
       <span class="brand-name">SolVision</span>
     </div>
     <div class="header-right">
-      <div class="network-indicator">
-        <span class="network-dot"></span>
-        <span class="network-label">Mainnet</span>
-      </div>
       <span class="header-clock"></span>
     </div>
   `;

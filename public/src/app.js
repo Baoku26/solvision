@@ -156,6 +156,13 @@ async function boot() {
   renderStatusBar(document.getElementById('app-status'));
   initNotifications();
 
+  // Remove legacy network key and force mainnet RPC
+  localStorage.removeItem('sv_network');
+  const storedRpc = localStorage.getItem(STORAGE_KEYS.RPC_ENDPOINT);
+  if (storedRpc && storedRpc.includes('devnet')) {
+    localStorage.removeItem(STORAGE_KEYS.RPC_ENDPOINT);
+  }
+
   consumeDeeplink(); // may add a wallet from URL param
 
   const wallets = get(STORAGE_KEYS.WALLETS) || [];

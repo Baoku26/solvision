@@ -14,12 +14,12 @@ function _fill(el, d) {
   const usdValue = (d.balance || 0) * (d.price || 0);
   const chg      = d.change24h ?? null;
   const initial  = (d.symbol || '?').charAt(0).toUpperCase();
-  const logoUrl  = `https://img.jup.ag/tokens/${d.mint}`;
+  const logoUrl  = d.logoURI || '';
 
   el.innerHTML =
     `<div class="ti-icon" style="background:${d.color || '#444'}">` +
       `<span class="ti-icon-letter">${initial}</span>` +
-      `<img class="ti-icon-img" src="${logoUrl}" alt="" aria-hidden="true" onerror="this.style.display='none'">` +
+      (logoUrl ? `<img class="ti-icon-img" src="${logoUrl}" alt="" aria-hidden="true" onerror="this.style.display='none'">` : '') +
     `</div>` +
     `<div class="ti-body">` +
       `<div class="ti-top">` +

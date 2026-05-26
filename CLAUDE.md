@@ -269,9 +269,50 @@ The `char-selector.js` component is reused for pairing code entry (alphanumeric,
 - FIFO queue; only one `.notif-banner` visible at a time; slides in from top of `#app-main` via CSS transform transition; auto-dismisses after 4s
 - `#app-notifications` is `position:absolute; z-index:100; pointer-events:none` — never steals focus
 
-### Up Next
+---
 
-Phase 5: Settings & Configuration (tasks 5.1 – 5.2)
-- Settings view: all 8 menu items navigable by arrow keys, changes persist to localStorage
-- Network/RPC changes trigger WS reconnection and full data re-fetch
-- (Optional) Price alerts: per-token threshold alerts, single-use, fire via notification system
+**Phase 5: Settings & Configuration is done (tasks 5.1 – 5.2). 109 tests passing.**
+
+#### 5.1 — Settings view
+- `public/src/views/settings.js` — mode-based view (`_mode`: menu / rpc / about / alerts-list / alerts-token / alerts-config)
+- 9 menu items: Active Wallet, Network, RPC Endpoint, Price Refresh, Currency, Token Filter, Price Alerts, Import Wallet, About
+- `dispatch(key, value)` emits `sv:settings-changed` CustomEvent; dashboard listens to update pollers and reconnect WS
+- RPC submenu overlay: Public / Helius / QuickNode; About overlay: version + build date
+- Token filter (All / Non-zero) and currency cycle (USD/EUR/GBP/NGN) update without reload
+
+#### 5.2 — Price alerts
+- `public/src/utils/alerts.js` — `checkPriceAlerts(prices)` checks all non-triggered alerts; fires `pushNotification` on threshold cross; marks alert `triggered: true` (single-use)
+- Alert config flow: alerts list → token picker (15 tokens, 8-item virtual window) → direction toggle (above/below) → threshold stepper
+- Stepper: ArrowUp/Down adjusts value by current step; ArrowLeft/Right changes step size; `calcStep(price)` computes sensible default step as `10^(floor(log10(price)) - 1)`
+- Up to 10 alerts in `sv_price_alerts`; delete from list via a dedicated del button per alert row
+
+---
+
+**Phase 6: Polish & Optimization is done (tasks 6.1 – 6.5).**
+
+#### 6.1 — Boot loader
+- `#boot-loader` div in `public/index.html` — spinning `.boot-ring` + `.boot-brand` + `.boot-text`; visible by default, fades out via `boot-out` CSS class + `transitionend` listener
+- `boot()` in `app.js` is async; waits for `sv:boot-complete` CustomEvent OR 5s timeout before calling `hideBootLoader()`
+- Dashboard dispatches `sv:boot-complete` after the first successful `_fetchAll()` + `_fetchPrices()` chain; guarded by `_bootFired` flag
+- No-wallet path: skips loader immediately and navigates to import view
+
+#### 6.2 — Error states & offline handling
+- Stale indicator: `_updatePortfolio()` checks `sv_price_cache.timestamp`; shows `⏱ Stale` span in portfolio meta row when cache is older than 60s
+- Offline/online: `window.addEventListener('offline'/'online', ...)` in `app.js` calls `setOfflineState(offline)` on status bar; shows `<span class="offline-label">Offline</span>` in place of TPS display; restores TPS slot on reconnect
+- No-wallet guard in `dashboard.js _mount`: immediately redirects to import if `_getActiveAddress()` returns null
+
+#### 6.3 — Performance
+- Bundle: 38.5KB gzipped (well under 80KB budget)
+- localStorage worst case: ~11.7KB (15 tokens × 30 history points × 20B + cache + wallets + alerts + 1KB misc)
+
+#### 6.4 — MRBD compliance
+- `scripts/validate-mrbd.js` — static analysis script: HTML viewport, CSS overflow rules, font size tokens, JS input patterns (no scroll/touch/mouse events), icons, manifest, gzip bundle size, localStorage estimate
+- 35/35 checks passing: `MRBD compliance: PASS ✓`
+
+#### 6.5 — Deployment & sharing
+- `README.md` written with: feature overview, platform constraints table, tech stack, project structure, dev setup, all three wallet import methods, Vercel deployment guide, env vars, KV store setup, deep link / QR sharing instructions, configuration table, test commands, architecture notes
+- Deep link format: `https://<deployment>/?addr=<BASE58_ADDRESS>` — consumed on boot, URL param cleared immediately
+
+### Current State
+
+All 6 phases complete. 109 tests passing. 35/35 MRBD compliance checks passing. Ready for production deploy (`vercel --prod`) and on-device testing.

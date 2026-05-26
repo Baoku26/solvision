@@ -6,26 +6,30 @@ import { getBatchPrices, getCachedPrices }    from '../services/prices.js';
 import { wsMonitor }                          from '../services/websocket.js';
 import { createPoller }                       from '../utils/polling.js';
 import { formatPrice }                        from '../utils/format.js';
+import { checkPriceAlerts }                   from '../utils/alerts.js';
 import { get }                                from '../services/storage.js';
+
 import { STORAGE_KEYS, DEFAULTS, getTokenMeta } from '../constants.js';
 
 const SOL_MINT   = 'So11111111111111111111111111111111111111112';
 const WINDOW_SIZE = 6;
 
 // ── Module state ───────────────────────────────────────────────
-let _tokens      = [];
-let _tokenNodes  = [];
-let _windowStart = 0;
-let _focusedIdx  = 0;
-let _pollers     = [];
-let _container   = null;
-let _cachedSol   = null;
-let _cachedAccts = null;
-let _lastAddress = null;
-let _keyHandler  = null;
-let _balHandler  = null;
-let _wsAddress   = null;
-let _fetchLock   = false;
+let _tokens          = [];
+let _tokenNodes      = [];
+let _windowStart     = 0;
+let _focusedIdx      = 0;
+let _pollers         = [];
+let _container       = null;
+let _cachedSol       = null;
+let _cachedAccts     = null;
+let _lastAddress     = null;
+let _keyHandler      = null;
+let _balHandler      = null;
+let _settingsHandler = null;
+let _wsAddress       = null;
+let _fetchLock       = false;
+let _bootFired       = false;
 
 // ── Helpers ────────────────────────────────────────────────────
 function _getActiveAddress() {
@@ -68,12 +72,13 @@ function _updatePortfolio() {
     totalUSD += usd;
     weightedNum += usd * (t.change24h || 0);
   }
-  const change24h  = totalUSD > 0 ? weightedNum / totalUSD : null;
-  const solToken   = _tokens[0];
+  const change24h = totalUSD > 0 ? weightedNum / totalUSD : null;
+  const solToken  = _tokens[0];
 
   const elTotal  = _container.querySelector('.dash-total');
   const elChange = _container.querySelector('.dash-change');
   const elSol    = _container.querySelector('.dash-sol');
+  const elStale  = _container.querySelector('.dash-stale');
 
   if (elTotal)  elTotal.textContent  = formatPrice(totalUSD);
   if (elChange) {
@@ -84,6 +89,13 @@ function _updatePortfolio() {
   }
   if (elSol && solToken) {
     elSol.textContent = `${(solToken.balance || 0).toFixed(4)} SOL`;
+  }
+
+  // Stale indicator: prices older than 60s
+  if (elStale) {
+    const cache = get(STORAGE_KEYS.PRICE_CACHE);
+    const stale = !cache?.timestamp || (Date.now() - cache.timestamp > 60_000);
+    elStale.style.display = stale ? 'flex' : 'none';
   }
 }
 
@@ -186,6 +198,8 @@ async function _fetchPrices() {
   }
   _updatePortfolio();
 
+  checkPriceAlerts(prices);
+
   document.dispatchEvent(new CustomEvent('sv:prices-updated', {
     detail: { prices }, bubbles: false,
   }));
@@ -248,6 +262,8 @@ function _render(container) {
         `<span class="dash-change">—</span>` +
         `<span class="dash-sep"> · </span>` +
         `<span class="dash-sol">—</span>` +
+        `<span class="dash-sep"> · </span>` +
+        `<span class="dash-stale" style="display:none">⏱ Stale</span>` +
       `</div>` +
     `</div>` +
     `<div class="dash-list-header">` +
@@ -278,6 +294,7 @@ function _mount(container, _params) {
     _tokenNodes   = [];
     _cachedSol    = null;
     _cachedAccts  = null;
+    _bootFired    = false;
   }
 
   _keyHandler = _setupKeyHandler(container);
@@ -301,8 +318,27 @@ function _mount(container, _params) {
   tpsPoll.start();
   _pollers = [pricePoll, balancePoll, tpsPoll];
 
-  // Initial load
-  _fetchAll().then(() => _fetchPrices()).then(() => _fetchTPS());
+  // React to settings changes
+  _settingsHandler = ({ detail: { key, value } }) => {
+    if (key === STORAGE_KEYS.REFRESH_INTERVAL) {
+      _pollers[0]?.setInterval(value);
+    }
+    if (key === STORAGE_KEYS.NETWORK || key === STORAGE_KEYS.RPC_ENDPOINT) {
+      // Reconnect WS to pick up new endpoint
+      const addr = _getActiveAddress();
+      if (addr) { wsMonitor.disconnect(); wsMonitor.connect(addr); _wsAddress = addr; }
+    }
+  };
+  document.addEventListener('sv:settings-changed', _settingsHandler);
+
+  // Initial load — signals boot-complete when first data arrives
+  _fetchAll().then(() => _fetchPrices()).then(() => {
+    _fetchTPS();
+    if (!_bootFired) {
+      _bootFired = true;
+      document.dispatchEvent(new Event('sv:boot-complete'));
+    }
+  });
 
   // Restore focus
   setTimeout(() => {
@@ -311,14 +347,18 @@ function _mount(container, _params) {
   }, 50);
 }
 
-function _unmount(container) {
+function _unmount() {
   if (_keyHandler) {
-    container.removeEventListener('keydown', _keyHandler);
+    _container?.removeEventListener('keydown', _keyHandler);
     _keyHandler = null;
   }
   if (_balHandler) {
     document.removeEventListener('sv:balance-changed', _balHandler);
     _balHandler = null;
+  }
+  if (_settingsHandler) {
+    document.removeEventListener('sv:settings-changed', _settingsHandler);
+    _settingsHandler = null;
   }
   for (const p of _pollers) p.stop();
   _pollers = [];

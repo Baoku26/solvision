@@ -1,5 +1,5 @@
 import { renderHeader, updateNetworkStatus } from './components/header.js';
-import { renderStatusBar }                  from './components/status-bar.js';
+import { renderStatusBar, setOfflineState } from './components/status-bar.js';
 import { initNotifications }                from './components/notification.js';
 import { isValidSolanaAddress }             from './utils/base58.js';
 import { get, set }                         from './services/storage.js';
@@ -9,6 +9,7 @@ import { register as registerDashboard } from './views/dashboard.js';
 import { register as registerDetail    } from './views/detail.js';
 import { register as registerImport    } from './views/import-wallet.js';
 import { register as registerManage    } from './views/manage-wallets.js';
+import { register as registerSettings  } from './views/settings.js';
 
 // ── App state ──────────────────────────────────────────────────
 export const state = {
@@ -110,26 +111,12 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ── Stub view for unimplemented screens ───────────────────────
-function stubView(label, accent = 'var(--sol-text-dim)') {
-  return {
-    render(container) {
-      container.innerHTML =
-        `<div style="flex:1;display:flex;flex-direction:column;` +
-        `align-items:center;justify-content:center;gap:var(--space-3)">` +
-        `<span style="font-size:var(--text-2xl);color:${accent}">◈</span>` +
-        `<span style="font-size:var(--text-lg);color:var(--sol-text-dim)">${label}</span>` +
-        `</div>`;
-    },
-    mount() {},
-  };
-}
 
 registerDashboard();
 registerDetail();
 registerImport();
 registerManage();
-registerView('settings', stubView('Settings', 'var(--sol-purple)'));
+registerSettings();
 
 // ── Deeplink detection ─────────────────────────────────────────
 function consumeDeeplink() {
@@ -155,8 +142,16 @@ function consumeDeeplink() {
   return true;
 }
 
+// ── Boot loader ────────────────────────────────────────────────
+function hideBootLoader() {
+  const el = document.getElementById('boot-loader');
+  if (!el || el.style.display === 'none') return;
+  el.classList.add('boot-out');
+  el.addEventListener('transitionend', () => { el.style.display = 'none'; }, { once: true });
+}
+
 // ── Boot ───────────────────────────────────────────────────────
-function boot() {
+async function boot() {
   renderHeader(document.getElementById('app-header'));
   renderStatusBar(document.getElementById('app-status'));
   initNotifications();
@@ -167,7 +162,26 @@ function boot() {
   consumeDeeplink(); // may add a wallet from URL param
 
   const wallets = get(STORAGE_KEYS.WALLETS) || [];
-  navigateTo(wallets.length > 0 ? 'dashboard' : 'import');
+  if (wallets.length === 0) {
+    hideBootLoader();
+    navigateTo('import');
+    return;
+  }
+
+  navigateTo('dashboard');
+
+  // Wait for first data load or 5s timeout, then reveal the app
+  await Promise.race([
+    new Promise(resolve =>
+      document.addEventListener('sv:boot-complete', resolve, { once: true })
+    ),
+    new Promise(resolve => setTimeout(resolve, 5_000)),
+  ]);
+  hideBootLoader();
 }
+
+// ── Offline / online detection ──────────────────────────────────
+window.addEventListener('offline', () => setOfflineState(true));
+window.addEventListener('online',  () => setOfflineState(false));
 
 document.addEventListener('DOMContentLoaded', boot);

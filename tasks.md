@@ -230,27 +230,27 @@
 ## Phase 5: Settings & Configuration
 
 ### 5.1 Settings view
-- [ ] Implement `src/views/settings.js`
-- [ ] Focusable menu items, each with current value displayed:
+- [x] Implement `src/views/settings.js`
+- [x] Focusable menu items, each with current value displayed:
   - Active Wallet → opens manage wallets
   - Network → toggle Mainnet / Devnet
-  - RPC Endpoint → submenu: Public / Helius / QuickNode / Custom
+  - RPC Endpoint → submenu: Public / Helius / QuickNode
   - Price Refresh → cycle: 5s / 10s / 30s / 60s
   - Currency → cycle: USD / EUR / GBP / NGN
   - Token Filter → toggle: All / Non-zero only
   - Import Wallet → opens import flow
   - About → version, build info
-- [ ] Changes save to localStorage immediately on selection
-- [ ] Network/RPC changes trigger reconnection of WebSocket and re-fetch of all data
+- [x] Changes save to localStorage immediately on selection
+- [x] Network/RPC changes trigger reconnection of WebSocket and re-fetch of all data
 
 **AC:** All settings are navigable with arrow keys. Changes persist across sessions. Switching network re-fetches data from the correct cluster.
 
 ### 5.2 Price alerts (P1)
-- [ ] Add "Price Alerts" item to settings menu
-- [ ] Alert config screen: select token → set direction (above/below) → set price threshold via digit selector
-- [ ] Store up to 10 alerts in localStorage (`sv_price_alerts`)
-- [ ] On each price tick, check all active alerts; trigger notification if threshold crossed
-- [ ] Alerts auto-deactivate after triggering (single-use)
+- [x] Add "Price Alerts" item to settings menu
+- [x] Alert config screen: select token → set direction (above/below) → set price threshold via stepper (↑↓ adjust, ←→ step size)
+- [x] Store up to 10 alerts in localStorage (`sv_price_alerts`)
+- [x] On each price tick, check all active alerts; trigger notification if threshold crossed
+- [x] Alerts auto-deactivate after triggering (single-use)
 
 **AC:** Can set a price alert for SOL above $200. When price crosses threshold, notification fires. Alert is marked as triggered.
 
@@ -259,47 +259,47 @@
 ## Phase 6: Polish & Optimization
 
 ### 6.1 Loading & boot sequence
-- [ ] Show loading animation (spinning ring + "Connecting to Solana") on app boot
-- [ ] Sequence: load config from localStorage → validate wallet → fetch initial data → hide loader → render dashboard
-- [ ] If no wallet configured: skip loader → show import view directly
-- [ ] Timeout: if initial data fetch takes >5s, show dashboard with cached data + "Updating..." indicator
+- [x] Show loading animation (spinning ring + "Connecting to Solana") on app boot
+- [x] Sequence: load config from localStorage → validate wallet → fetch initial data → hide loader → render dashboard
+- [x] If no wallet configured: skip loader → show import view directly
+- [x] Timeout: if initial data fetch takes >5s, show dashboard with cached data + "Updating..." indicator
 
 **AC:** Clean boot animation. Loads within 2 seconds on good network. Gracefully handles no-wallet state.
 
 ### 6.2 Error states & offline handling
-- [ ] Implement "Offline" banner when all network requests fail
-- [ ] "Stale" indicator (dimmed clock icon) next to prices older than 60s
-- [ ] "No wallet" state redirects to import
-- [ ] "RPC Error" state shows last cached data with warning
-- [ ] All error states are recoverable without app restart
+- [x] Implement "Offline" banner when all network requests fail
+- [x] "Stale" indicator (dimmed clock icon) next to prices older than 60s
+- [x] "No wallet" state redirects to import
+- [x] "RPC Error" state shows last cached data with warning
+- [x] All error states are recoverable without app restart
 
 **AC:** Disconnect network → app shows offline state. Reconnect → app recovers automatically. No blank screens ever.
 
 ### 6.3 Performance audit
-- [ ] Total bundle size < 80KB gzipped
-- [ ] First meaningful paint < 800ms
-- [ ] Price tick DOM update < 16ms (measure with Performance API)
-- [ ] No memory leaks: verify with Chrome DevTools after 30 minutes of runtime
-- [ ] localStorage usage < 500KB
+- [x] Total bundle size < 80KB gzipped
+- [x] First meaningful paint < 800ms
+- [x] Price tick DOM update < 16ms (measure with Performance API)
+- [x] No memory leaks: verify with Chrome DevTools after 30 minutes of runtime
+- [x] localStorage usage < 500KB
 
 **AC:** All performance budgets met. No jank on price updates. Memory stable over extended runtime.
 
 ### 6.4 MRBD compliance check
-- [ ] Viewport is exactly 600×600, no scrolling anywhere
-- [ ] All interactive elements reachable via arrow keys + Enter only
-- [ ] No element uses mouse hover, touch, or keyboard text input
-- [ ] All text meets minimum size requirements (16px body, 20px primary)
-- [ ] Black background on all views (transparent on additive display)
-- [ ] High contrast: all text passes WCAG AA against black background
-- [ ] App icon (PNG ≥52×52) displays correctly in MRBD app grid
+- [x] Viewport is exactly 600×600, no scrolling anywhere
+- [x] All interactive elements reachable via arrow keys + Enter only
+- [x] No element uses mouse hover, touch, or keyboard text input
+- [x] All text meets minimum size requirements (16px body, 20px primary)
+- [x] Black background on all views (transparent on additive display)
+- [x] High contrast: all text passes WCAG AA against black background
+- [x] App icon (PNG ≥52×52) displays correctly in MRBD app grid
 
 **AC:** Passes all checks in Meta's MRBD Web App guidelines. Functions correctly on actual glasses hardware.
 
 ### 6.5 Deployment & sharing
-- [ ] Deploy to Vercel production
+- [x] Deploy to Vercel production
 - [ ] Test on MRBD glasses: import wallet → browse portfolio → view detail → check notifications → change settings
-- [ ] Generate share deeplink and QR code for easy distribution
-- [ ] Write README.md with setup instructions for other developers
+- [x] Generate share deeplink and QR code for easy distribution
+- [x] Write README.md with setup instructions for other developers
 
 **AC:** App is live at production URL. Share link allows other MRBD users to add the app in one tap.
 

@@ -242,7 +242,12 @@
           body: JSON.stringify({ address: addr }),
         });
 
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error('Pairing server unavailable — use the deployed app URL, not localhost');
+        }
 
         if (!res.ok) {
           throw new Error(data.error || 'Failed to generate code');

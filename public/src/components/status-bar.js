@@ -29,3 +29,14 @@ export function updateTPS(value) {
     ? value.toLocaleString('en-US', { maximumFractionDigits: 0 })
     : '—';
 }
+
+export function setOfflineState(offline) {
+  const display = document.querySelector('.tps-display');
+  if (!display) return;
+  if (offline) {
+    display.innerHTML = '<span class="offline-label">Offline</span>';
+  } else {
+    display.innerHTML =
+      '<span class="tps-label">TPS</span><span class="tps-value">—</span>';
+  }
+}

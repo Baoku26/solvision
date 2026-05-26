@@ -8,8 +8,9 @@ function _getContainer() {
 }
 
 function _iconFor(type) {
-  if (type === 'swap')  return '⇄';
-  if (type === 'token') return '◎';
+  if (type === 'swap')     return '⇄';
+  if (type === 'token')    return '◎';
+  if (type === 'trending') return '◉';
   return '◈';
 }
 

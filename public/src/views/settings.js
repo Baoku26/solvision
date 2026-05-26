@@ -11,8 +11,9 @@ const VERSION         = '1.0.0';
 const REFRESH_CYCLE   = [5_000, 10_000, 30_000, 60_000];
 const CURRENCY_CYCLE  = ['USD', 'EUR', 'GBP', 'NGN'];
 const FILTER_LABELS   = { all: 'All', nonzero: 'Non-zero' };
-const TOKEN_WINDOW    = 8;  // visible tokens in picker
-const ALERTS_WINDOW   = 6;  // visible alerts in list
+const TOKEN_WINDOW      = 8;  // visible tokens in picker
+const ALERTS_WINDOW     = 6;  // visible alerts in list
+const TREND_THRESHOLDS  = [5, 10, 20, 50];
 
 const RPC_PRESETS = [
   { label: 'Public',    key: 'public' },
@@ -66,6 +67,16 @@ function getAlertCountLabel() {
   return n === 0 ? 'None' : `${n} active`;
 }
 
+function getTrendingAlertsCfg() {
+  return get(STORAGE_KEYS.TRENDING_ALERTS) || DEFAULTS.TRENDING_ALERTS;
+}
+
+function getTrendingLabel() {
+  const t = getTrendingAlertsCfg();
+  if (!t.enabled) return 'Off';
+  return `${t.threshold}% · ${t.timeframe === 'h1' ? '1h' : '24h'}`;
+}
+
 function dispatch(key, value) {
   document.dispatchEvent(new CustomEvent('sv:settings-changed', { detail: { key, value } }));
 }
@@ -115,6 +126,7 @@ function getMenuItems() {
     { id: 'currency', label: 'Currency',        value: get(STORAGE_KEYS.CURRENCY) || DEFAULTS.CURRENCY, arrow: '⟳', action: cycleCurrency },
     { id: 'filter',   label: 'Token Filter',    value: FILTER_LABELS[get(STORAGE_KEYS.TOKEN_FILTER) || DEFAULTS.TOKEN_FILTER], arrow: '⟳', action: cycleFilter },
     { id: 'alerts',   label: 'Price Alerts',    value: getAlertCountLabel(),                  arrow: '›',  action: showAlertsList },
+    { id: 'trending', label: 'Trending Alerts', value: getTrendingLabel(),                     arrow: '›',  action: showTrendingAlerts },
     { id: 'import',   label: 'Import Wallet',   value: '',                                    arrow: '›',  action: () => navigateTo('import') },
     { id: 'about',    label: 'About',           value: `v${VERSION}`,                         arrow: '›',  action: showAbout },
   ];
@@ -216,6 +228,78 @@ function showAbout() {
 
   _container.querySelector('#settings-main').appendChild(overlay);
   overlay.querySelector('#about-ok').focus();
+}
+
+// ── Render: trending alerts overlay ───────────────────────────
+function showTrendingAlerts() {
+  _mode = 'trending';
+  renderMenu();
+  _container.querySelectorAll('.setting-item').forEach(b => b.setAttribute('aria-disabled', 'true'));
+  _renderTrendingOverlay(null);
+}
+
+function _renderTrendingOverlay(focusId) {
+  const existing = _container.querySelector('.settings-overlay');
+  if (existing) existing.remove();
+
+  const t     = getTrendingAlertsCfg();
+  const tidx  = TREND_THRESHOLDS.indexOf(t.threshold);
+  const safe  = tidx < 0 ? 1 : tidx;
+  const tfLbl = t.timeframe === 'h1' ? '1h' : '24h';
+  const dimIf = !t.enabled ? 'style="opacity:0.45" aria-disabled="true"' : '';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'settings-overlay';
+  overlay.innerHTML = `
+    <div class="settings-submenu">
+      <p class="submenu-title">Trending Alerts</p>
+      <button class="setting-item focusable" tabindex="0" id="trend-enabled">
+        <span class="setting-label">Enabled</span>
+        <span class="setting-value"
+              style="color:${t.enabled ? 'var(--sol-cyan)' : 'var(--text-dim)'}">${t.enabled ? 'ON' : 'OFF'}</span>
+      </button>
+      <button class="setting-item focusable" tabindex="0" id="trend-threshold" ${dimIf}>
+        <span class="setting-label">Threshold</span>
+        <span class="setting-right">
+          <span class="setting-value">${t.threshold}%</span>
+          <span class="setting-arrow">⟳</span>
+        </span>
+      </button>
+      <button class="setting-item focusable" tabindex="0" id="trend-timeframe" ${dimIf}>
+        <span class="setting-label">Timeframe</span>
+        <span class="setting-right">
+          <span class="setting-value">${tfLbl}</span>
+          <span class="setting-arrow">⟳</span>
+        </span>
+      </button>
+      <button class="submenu-action focusable" tabindex="0" id="trend-done">Done</button>
+    </div>`;
+
+  function save(updates, refocus) {
+    const next = { ...t, ...updates };
+    set(STORAGE_KEYS.TRENDING_ALERTS, next);
+    dispatch(STORAGE_KEYS.TRENDING_ALERTS, next);
+    _renderTrendingOverlay(refocus);
+  }
+
+  overlay.querySelector('#trend-enabled').addEventListener('click', () =>
+    save({ enabled: !t.enabled }, 'trend-enabled'));
+
+  overlay.querySelector('#trend-threshold').addEventListener('click', () => {
+    if (!t.enabled) return;
+    save({ threshold: TREND_THRESHOLDS[(safe + 1) % TREND_THRESHOLDS.length] }, 'trend-threshold');
+  });
+
+  overlay.querySelector('#trend-timeframe').addEventListener('click', () => {
+    if (!t.enabled) return;
+    save({ timeframe: t.timeframe === 'h1' ? 'h24' : 'h1' }, 'trend-timeframe');
+  });
+
+  overlay.querySelector('#trend-done').addEventListener('click', () => { _mode = 'menu'; renderMenu(); });
+
+  _container.querySelector('#settings-main').appendChild(overlay);
+  const focus = focusId ? overlay.querySelector(`#${focusId}`) : overlay.querySelector('.focusable');
+  focus?.focus();
 }
 
 // ── Render: alerts list ────────────────────────────────────────

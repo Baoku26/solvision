@@ -6,8 +6,10 @@ import { getBatchPrices, getCachedPrices }    from '../services/prices.js';
 import { wsMonitor }                          from '../services/websocket.js';
 import { createPoller }                       from '../utils/polling.js';
 import { formatPrice, formatCompact, truncateAddress } from '../utils/format.js';
-import { checkPriceAlerts }                   from '../utils/alerts.js';
-import { get }                                from '../services/storage.js';
+import { checkPriceAlerts }                           from '../utils/alerts.js';
+import { checkTrendingAlerts, resetTrendingAlerted }  from '../services/trending.js';
+import { pushNotification }                           from '../components/notification.js';
+import { get }                                        from '../services/storage.js';
 
 import { STORAGE_KEYS, DEFAULTS, getTokenMeta } from '../constants.js';
 
@@ -30,6 +32,7 @@ let _settingsHandler = null;
 let _wsAddress       = null;
 let _fetchLock       = false;
 let _bootFired       = false;
+let _trendingPoll    = null;
 
 // ── Helpers ────────────────────────────────────────────────────
 function _getActiveAddress() {
@@ -211,6 +214,19 @@ async function _fetchTPS() {
   if (data !== null) updateTPS(data);
 }
 
+function _startTrendingPoll(cfg) {
+  if (_trendingPoll) { _trendingPoll.stop(); _trendingPoll = null; }
+  _trendingPoll = createPoller(async () => {
+    const alerts = await checkTrendingAlerts(cfg.threshold, cfg.timeframe);
+    for (const a of alerts) {
+      const dir = a.change >= 0 ? '▲' : '▼';
+      pushNotification('trending',
+        `${a.symbol} ${dir} ${Math.abs(a.change).toFixed(1)}% · ${a.timeframe === 'h1' ? '1h' : '24h'}`);
+    }
+  }, 5 * 60_000);
+  _trendingPoll.start();
+}
+
 // ── Arrow-key handler scoped to token list ─────────────────────
 function _setupKeyHandler(container) {
   function handler(e) {
@@ -325,6 +341,10 @@ function _mount(container, _params) {
   tpsPoll.start();
   _pollers = [pricePoll, balancePoll, tpsPoll];
 
+  // Trending alerts poller — starts immediately if enabled
+  const trendCfg = get(STORAGE_KEYS.TRENDING_ALERTS) || DEFAULTS.TRENDING_ALERTS;
+  if (trendCfg.enabled) _startTrendingPoll(trendCfg);
+
   // React to settings changes
   _settingsHandler = ({ detail: { key, value } }) => {
     if (key === STORAGE_KEYS.REFRESH_INTERVAL) {
@@ -334,6 +354,15 @@ function _mount(container, _params) {
       const addr = _getActiveAddress();
       if (addr) { wsMonitor.disconnect(); wsMonitor.connect(addr); _wsAddress = addr; }
       _fetchAll().then(() => _fetchPrices());
+    }
+    if (key === STORAGE_KEYS.TRENDING_ALERTS) {
+      resetTrendingAlerted();
+      if (value.enabled) {
+        _startTrendingPoll(value);
+      } else {
+        _trendingPoll?.stop();
+        _trendingPoll = null;
+      }
     }
   };
   document.addEventListener('sv:settings-changed', _settingsHandler);
@@ -369,6 +398,7 @@ function _unmount() {
   }
   for (const p of _pollers) p.stop();
   _pollers = [];
+  if (_trendingPoll) { _trendingPoll.stop(); _trendingPoll = null; }
 }
 
 export function register() {

@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   PRICE_CACHE:      'sv_price_cache',
   PRICE_HISTORY:    'sv_price_history',
   PRICE_ALERTS:     'sv_price_alerts',
+  TRENDING_ALERTS:  'sv_trending_alerts',
   DEBUG:            'sv_debug',
 };
 
@@ -27,6 +28,7 @@ export const DEFAULTS = {
   REFRESH_INTERVAL: 10_000,
   CURRENCY:         'USD',
   TOKEN_FILTER:     'all',
+  TRENDING_ALERTS:  { enabled: false, threshold: 10, timeframe: 'h24' },
 };
 
 // ── Token registry ─────────────────────────────────────────────

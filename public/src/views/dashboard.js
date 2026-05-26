@@ -24,6 +24,7 @@ let _container       = null;
 let _cachedSol       = null;
 let _cachedAccts     = null;
 let _lastAddress     = null;
+let _lastNetwork     = null;
 let _keyHandler      = null;
 let _balHandler      = null;
 let _settingsHandler = null;
@@ -285,9 +286,12 @@ function _mount(container, _params) {
   const address = _getActiveAddress();
   if (!address) { navigateTo('import'); return; }
 
-  // Reset state if wallet changed
-  if (address !== _lastAddress) {
+  const network = get(STORAGE_KEYS.NETWORK) || DEFAULTS.NETWORK;
+
+  // Reset state if wallet or network changed
+  if (address !== _lastAddress || network !== _lastNetwork) {
     _lastAddress  = address;
+    _lastNetwork  = network;
     _windowStart  = 0;
     _focusedIdx   = 0;
     _tokens       = [];
@@ -295,6 +299,8 @@ function _mount(container, _params) {
     _cachedSol    = null;
     _cachedAccts  = null;
     _bootFired    = false;
+    remove(STORAGE_KEYS.PRICE_CACHE);
+    remove(STORAGE_KEYS.PRICE_HISTORY);
   }
 
   _keyHandler = _setupKeyHandler(container);

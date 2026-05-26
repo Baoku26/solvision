@@ -1,6 +1,6 @@
 {
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|setup\\.html|icons/|manifest\\.webmanifest).*)", "destination": "/index.html" }
   ]
 }

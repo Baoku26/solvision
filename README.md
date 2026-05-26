@@ -2,16 +2,15 @@
 
 Real-time Solana portfolio HUD for the Meta Ray-Ban Display (MRBD) smart glasses. Renders wallet balances, live token prices, and transaction notifications as a transparent overlay on the additive waveguide display.
 
-![SolVision boot screen](docs/screenshot.png)
-
 ## Features
 
 - **Portfolio overview** — total USD value, weighted 24h change, SOL balance
-- **Token list** — up to 15 tokens with live prices, 24h change, and USD value
+- **Token list** — up to 15 tokens with live prices, 24h change, and USD value; gradient icon art with real token logos
 - **Token detail** — sparkline chart, 24h high/low, full holdings breakdown
 - **Price alerts** — single-use threshold alerts (above/below) per token
+- **Trending alerts** — auto-detects Solana tokens with significant price action; also discovers new trending tokens outside your portfolio via DexScreener
 - **Multi-wallet** — store up to 5 wallets, switch instantly
-- **Settings** — network (Mainnet/Devnet), RPC endpoint, refresh rate, currency, token filter
+- **Settings** — RPC endpoint, refresh rate, currency, token filter, price alerts, trending alerts
 - **Boot loader** — animated spinner with graceful 5s timeout fallback
 - **Offline state** — status bar shows "Offline"; recovers automatically on reconnect
 - **Stale indicator** — ⏱ shown when price cache is older than 60 seconds
@@ -31,11 +30,12 @@ Built exclusively for MRBD (Meta Ray-Ban Display). Constraints:
 ## Tech Stack
 
 - **Vanilla HTML/CSS/JS** — no framework, no bundler, ES modules only
-- **Solana JSON-RPC** via Helius (primary) / QuickNode (fallback) / public (last resort)
+- **Solana JSON-RPC** via Helius proxy (primary) / public (fallback)
 - **Jupiter Price API v2** — batch price fetches with CoinGecko fallback
 - **Solana WebSocket** — real-time balance and transaction monitoring
-- **Vercel** — static hosting + Edge Functions for the pairing API
-- **Vercel KV** — ephemeral pairing codes (10-min TTL)
+- **DexScreener API** — trending token discovery and price-action alerts
+- **Vercel** — static hosting + Edge Functions for the pairing and RPC proxy APIs
+- **Upstash Redis** — ephemeral pairing codes (10-min TTL)
 
 ## Project Structure
 
@@ -50,10 +50,11 @@ solvision/
 │       ├── app.js        # Boot, router, global keydown handler
 │       ├── views/        # dashboard, detail, settings, import-wallet, manage-wallets
 │       ├── components/   # header, status-bar, token-item, sparkline, notification, char-selector
-│       ├── services/     # rpc, prices, websocket, pairing, storage
+│       ├── services/     # rpc, prices, websocket, pairing, storage, trending
 │       ├── utils/        # format, base58, polling, alerts
 │       └── styles/       # variables, base, components, focus
 ├── api/
+│   ├── rpc.js            # Helius RPC proxy — injects API key server-side (Edge Function)
 │   ├── pair/index.js     # POST/GET pairing code API (Edge Function)
 │   └── health.js
 ├── scripts/
@@ -106,7 +107,7 @@ On the glasses: Settings → Import Wallet → Enter Address Manually → use ar
 ### Prerequisites
 
 - [Vercel CLI](https://vercel.com/docs/cli): `npm i -g vercel`
-- Vercel account with KV store enabled (for pairing API)
+- Vercel account linked to the GitHub repo (auto-deploys on push to `main`)
 
 ### Deploy
 
@@ -114,18 +115,29 @@ On the glasses: Settings → Import Wallet → Enter Address Manually → use ar
 vercel --prod
 ```
 
-### Environment Variables (optional)
+Or push to `main` — Vercel will auto-deploy via the GitHub integration.
 
-| Variable | Purpose |
-|---|---|
-| `HELIUS_API_KEY` | Helius RPC key for better rate limits |
-| `QUICKNODE_URL` | QuickNode RPC endpoint as fallback |
+### Environment Variables
 
-Without these, the app falls back to the public Solana RPC (rate-limited).
+| Variable | Purpose | Required |
+|---|---|---|
+| `HELIUS_API_KEY` | Helius RPC key — injected server-side by `api/rpc.js` | Recommended |
+| `KV_REST_API_URL` | Upstash Redis REST URL for pairing codes | Required for pairing |
+| `KV_REST_API_TOKEN` | Upstash Redis REST token | Required for pairing |
 
-### KV Store
+Without `HELIUS_API_KEY` the app falls back to the public Solana RPC (rate-limited). Without the KV vars the pairing API returns a 503 and the other two import methods (deep link, manual entry) still work.
 
-The pairing API (`api/pair/`) requires a Vercel KV database. Create one in the Vercel dashboard and link it to the project — no configuration needed beyond that.
+### Upstash KV Setup
+
+The pairing API requires an Upstash Redis database:
+
+1. Create a database at [upstash.com](https://upstash.com) (free tier is sufficient)
+2. Copy the REST URL and token from the Upstash console
+3. Add `KV_REST_API_URL` and `KV_REST_API_TOKEN` to Vercel project environment variables
+
+### Helius RPC Proxy
+
+`api/rpc.js` is an Edge Function that sits between the glasses app and Helius — the API key never reaches the client. The client calls `/api/rpc` for both HTTP JSON-RPC (POST) and to retrieve the WebSocket URL (GET). Switch to Helius in Settings → RPC Endpoint.
 
 ## Sharing with Other MRBD Users
 
@@ -145,11 +157,22 @@ All settings persist to `localStorage`. Change via the Settings view on the glas
 
 | Setting | Options | Default |
 |---|---|---|
-| Network | Mainnet / Devnet | Mainnet |
 | RPC Endpoint | Public / Helius / QuickNode | Public |
 | Price Refresh | 5s / 10s / 30s / 60s | 10s |
 | Currency | USD / EUR / GBP / NGN | USD |
 | Token Filter | All / Non-zero only | All |
+| Price Alerts | Per-token threshold (above/below), up to 10 | — |
+| Trending Alerts | Enabled toggle + Threshold (5/10/20/50%) + Timeframe (1h/24h) | Off |
+
+### Trending Alerts
+
+When enabled, a poller fires every 5 minutes and runs two checks:
+
+1. **Known tokens** — checks all 15 TOKEN_REGISTRY tokens (SOL, USDC, BONK, JUP, etc.) via DexScreener for moves beyond the configured threshold. Notification: `◉ SOL ▲ 12.3% · 24h`
+
+2. **Trending discovery** — fetches the top DexScreener-boosted Solana tokens, filters for tokens *not* in your registry, and checks their price action. Notification: `◉ MYRO ▲ 83.1% · Trending`
+
+Each token only fires once per session. Changing the threshold or timeframe resets the dedup state.
 
 ## Testing
 
@@ -168,6 +191,8 @@ node scripts/validate-mrbd.js
 ## Architecture Notes
 
 **No build step.** JS ships as raw ES modules. The browser handles `import`/`export` natively. This keeps the bundle tiny and removes tooling from the critical path.
+
+**Helius API key stays server-side.** The `api/rpc.js` Edge Function injects the key at the proxy layer. The client only ever talks to `/api/rpc`.
 
 **Focus management is the UI.** Every interactive element has `class="focusable" tabindex="0"`. The global `keydown` handler in `app.js` moves focus through `.focusable` elements in the active view. View-local handlers (dashboard token list, char-selector) call `e.stopPropagation()` to intercept arrow keys before the global handler.
 
